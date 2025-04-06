@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -36,6 +36,7 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
   const meshRef = useRef<THREE.Mesh>(null);
   const [angle, setAngle] = useState(0);
   const [hovered, setHovered] = useState(false);
+  const [tooltipVisible, setTooltipVisible] = useState(false);
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -44,8 +45,7 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
     setAngle(newAngle);
 
     if (isHeliocentric) {
-      // Heliocentric: planets orbit around the sun (center)
-      if (color === '#FFD700') { // Sun
+      if (color === '#FFD700') {
         meshRef.current.position.x = 0;
         meshRef.current.position.z = 0;
       } else {
@@ -53,15 +53,13 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
         meshRef.current.position.z = Math.sin(angle) * orbitRadius;
       }
     } else {
-      // Geocentric: planets orbit around the Earth
-      if (color === '#4169E1') { // Earth
+      if (color === '#4169E1') {
         meshRef.current.position.x = 0;
         meshRef.current.position.z = 0;
-      } else if (color === '#FFD700') { // Sun
+      } else if (color === '#FFD700') {
         meshRef.current.position.x = Math.cos(angle) * orbitRadius;
         meshRef.current.position.z = Math.sin(angle) * orbitRadius;
       } else {
-        // Other planets orbit relative to Earth's position
         meshRef.current.position.x = Math.cos(angle) * orbitRadius;
         meshRef.current.position.z = Math.sin(angle) * orbitRadius;
       }
@@ -77,6 +75,15 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
     return name;
   };
 
+  useEffect(() => {
+    if (hovered) {
+      setTooltipVisible(true);
+    } else {
+      const timer = setTimeout(() => setTooltipVisible(false), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [hovered]);
+
   return (
     <group>
       <mesh
@@ -88,21 +95,24 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
         <sphereGeometry args={[size, 32, 32]} />
         <meshStandardMaterial color={color} />
       </mesh>
-      {hovered && (
-        <Html position={[position[0], position[1] + size + 1, position[2]]}>
-          <div style={{
+      <Html position={[position[0], position[1] + size + 1, position[2]]}>
+        <div
+          style={{
             background: 'rgba(0, 0, 0, 0.8)',
             color: 'white',
             padding: '8px',
             borderRadius: '4px',
             whiteSpace: 'pre-line',
             fontSize: '14px',
-            pointerEvents: 'none'
-          }}>
-            {getHoverInfo()}
-          </div>
-        </Html>
-      )}
+            pointerEvents: 'none',
+            opacity: tooltipVisible ? 1 : 0,
+            transition: 'opacity 0.3s ease-in-out',
+            display: tooltipVisible ? 'block' : 'none'
+          }}
+        >
+          {getHoverInfo()}
+        </div>
+      </Html>
     </group>
   );
 };
