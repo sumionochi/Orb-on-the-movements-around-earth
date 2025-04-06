@@ -3,6 +3,13 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Trail } from '@react-three/drei';
 import * as THREE from 'three';
 
+interface InfoData {
+  title: string;
+  summary: string;
+  opengraphLink: string;
+  opengraphImage: string;
+}
+
 interface PlanetProps {
   position: [number, number, number]; // For fixed (non-orbiting) bodies
   size: number;
@@ -14,7 +21,7 @@ interface PlanetProps {
   heliocentricDistance: { au: number; km: string };
   geocentricDistance?: { earthRadii: number; km: string };
   children?: React.ReactNode;
-  onSelect?: (info: string | null) => void;
+  onSelect?: (info: InfoData | null) => void; // Updated type
 }
 
 interface OrbitRingProps {
@@ -26,7 +33,7 @@ interface OrbitRingProps {
   heliocentricDistance: { au: number; km: string };
   geocentricDistance?: { earthRadii: number; km: string };
   isHeliocentric: boolean;
-  onSelect?: (info: string | null) => void;
+  onSelect?: (info: InfoData | null) => void; // Updated type
 }
 
 // --- Retrograde Orbit Ring -------------------------------------------------
@@ -69,16 +76,156 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
   const [lastClickTime, setLastClickTime] = useState(0);
-
   if (!isVisible) return null;
 
-  const getHoverInfo = () => {
-    if (isHeliocentric) {
-      return `${planetName}\nDistance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})`;
-    } else if (geocentricDistance) {
-      return `${planetName}\nDistance from Earth: ${geocentricDistance.earthRadii} Earth radii (${geocentricDistance.km})`;
+  const getHoverInfo = (): InfoData => {
+    // Custom info for Mercury:
+    if (planetName === "Mercury") {
+      return {
+        title: "Mercury: The Extreme Innermost Planet",
+        summary:
+        `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Mercury is the smallest and innermost planet in the solar system.\n" +
+          "- It experiences extreme temperature variations: scorching up to 700 K in sunlight and plunging to 100 K in darkness due to its lack of atmosphere.\n" +
+          "- It orbits the Sun rapidly with a unique spin–orbit resonance (three rotations every two Mercury years), resulting in a solar day of 176 Earth days.\n" +
+          "- Mercury is believed to have an iron–nickel core that occupies about 55% of its volume, likely molten, which contributes to its weak magnetic field.\n" +
+          "- Its orbital precession, once a mystery, was accurately explained by Einstein’s general theory of relativity.",
+        opengraphLink:
+          "https://www.youtube.com/watch?v=4D5a4drU3Cw&list=PLybg94GvOJ9E9BcCODbTNw2xU4b1cWSi6&index=15",
+        opengraphImage: "https://img.youtube.com/vi/4D5a4drU3Cw/maxresdefault.jpg",
+      };
     }
-    return planetName;
+    if (planetName === "Venus") {
+      return {
+        title: "Venus: The Hostile Sister Planet",
+        summary:
+        `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Venus is the second planet from the Sun, with an average orbital radius of 108 million kilometers and remarkably similar in size to Earth.\n" +
+          "- Its dense atmosphere consists of 96% carbon dioxide, creating surface pressures 100 times greater than Earth's and trapping extreme heat.\n" +
+          "- Surface temperatures reach around 735 K, making it the hottest planet, while thick sulfuric acid clouds obscure its terrain.\n" +
+          "- Radar mapping reveals highland regions like Ishtar Terra and Aphrodite Terra, with evidence of recent volcanic activity.\n" +
+          "- Venus rotates slowly in a retrograde direction, taking 243 Earth days per rotation and 117 Earth days per solar day.",
+        opengraphLink:
+          "https://www.youtube.com/watch?v=iEg-XgdoJPU&list=PLybg94GvOJ9E9BcCODbTNw2xU4b1cWSi6&index=16",
+        opengraphImage: "https://img.youtube.com/vi/iEg-XgdoJPU/maxresdefault.jpg",
+      };
+    }
+    if (planetName === "Earth") {
+      return {
+        title: "Earth: Our Life-Sustaining Blue Planet",
+        summary:
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Earth is the third rocky planet, known as our home, with a diameter of about 13,000 km.\n" +
+          "- It formed from a molten protoplanetary disk, cooled to form a crust, and built an atmosphere and oceans via volcanic outgassing and comet impacts.\n" +
+          "- Earth's interior comprises a solid inner core, liquid outer core, and silicate mantle, with density-driven differentiation.\n" +
+          "- Tectonic plates drive continental drift, forming mountains and shaping landscapes.\n" +
+          "- A giant impact likely formed the Moon, influencing tides and early life.\n" +
+          "- The robust magnetic field generated by core convection effectively shields Earth from harmful cosmic radiation.",
+        opengraphLink: "https://youtu.be/Ll_2i_PmP6M?si=mSBkqRLb_yLgsgIY",
+        opengraphImage: "https://img.youtube.com/vi/Ll_2i_PmP6M/maxresdefault.jpg",
+      };
+    }    
+    if (planetName === "Mars") {
+      return {
+        title: "Mars: The Red Planet of Contrasts",
+        summary:
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Mars glows with a faint red hue and is named after the Roman god of war.\n" +
+          "- It is the most Earth-like of the terrestrial planets, with half the diameter and one-tenth the mass of Earth.\n" +
+          "- Early speculations of canals and life gave way to a barren, cold, and dead landscape.\n" +
+          "- Its thin atmosphere (95% CO₂) and frequent dust storms create a unique pink haze.\n" +
+          "- Notable features include Valles Marineris and Olympus Mons, the tallest volcano in the solar system.\n" +
+          "- Mars has two small, irregular moons, Phobos and Deimos, likely captured asteroids.",
+        opengraphLink: "https://youtu.be/KlKIcr-CsLE?si=7XRtV9uPeLfDU185",
+        opengraphImage: "https://img.youtube.com/vi/KlKIcr-CsLE/maxresdefault.jpg",
+      };
+    }
+    if (planetName === "Jupiter") {
+      return {
+        title: "Jupiter: The King of the Gas Giants",
+        summary:
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Jupiter is the largest planet, with a diameter ten times that of Earth and more mass than all other planets combined.\n" +
+          "- It is composed mostly of hydrogen and helium, with a thick layer of liquid hydrogen above a solid core of iron, rock, and water.\n" +
+          "- Rapid rotation (once every 10 hours) drives high-speed winds and colossal storms like the Great Red Spot.\n" +
+          "- Jupiter has a thin ring system and over 69 moons, including the Galilean moons: Ganymede, Callisto, Io, and Europa.\n" +
+          "- Its powerful magnetic field, generated by liquid metallic hydrogen, is about 20,000 times stronger than Earth’s.",
+        opengraphLink: "https://youtu.be/p-Tz3N7jN98?si=syx6CvEdwYDsuFhm",
+        opengraphImage: "https://img.youtube.com/vi/p-Tz3N7jN98/maxresdefault.jpg",
+      };
+    }
+    if (planetName === "Saturn") {
+      return {
+        title: "Saturn: The Ringed Wonder of the Solar System",
+        summary:
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Saturn is the sixth planet from the Sun, nearly 10 AU away, almost twice as far as Jupiter.\n" +
+          "- It is nearly as large as Jupiter but is less dense than water, meaning it could float in an ocean.\n" +
+          "- Composed mainly of hydrogen and helium, it has a small core of iron, rock, and water.\n" +
+          "- Its striking, thin ring system extends over twice its radius, made of icy particles.\n" +
+          "- Saturn hosts at least 62 moons, including Titan with a nitrogen atmosphere and Enceladus with active water geysers.",
+        opengraphLink: "https://youtu.be/POW8YfeI00o?si=YHy3xpK10BPmj1UZ",
+        opengraphImage: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Saturn_during_Equinox.jpg/960px-Saturn_during_Equinox.jpg",
+      };
+    }
+    if (planetName === "Uranus") {
+      return {
+        title: "Uranus: The Tilted Ice Giant",
+        summary:
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Uranus is the seventh planet, nearly 20 AU from the Sun, discovered in the 18th century.\n" +
+          "- Named after the primordial sky god, it has a diameter about four times that of Earth.\n" +
+          "- Its hydrogen and methane-rich atmosphere gives it a distinctive deep blue color.\n" +
+          "- The interior features layers of water, methane, and ammonia around an iron-rock core, lacking metallic hydrogen.\n" +
+          "- Uranus hosts a thin ring system and 27 moons, with major ones named after Shakespearean and Alexander Pope characters.\n" +
+          "- Its extreme axial tilt results in unusual seasonal variations, with hemispheres alternating between prolonged daylight and darkness.",
+        opengraphLink: "https://youtu.be/gU9fFlM8m6M?si=0ZaCxI9XiNnZrrwA",
+        opengraphImage: "https://img.youtube.com/vi/gU9fFlM8m6M/maxresdefault.jpg",
+      };
+    }
+    if (planetName === "Neptune") {
+      return {
+        title: "Neptune: The Distant Blue World",
+        summary:
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- Neptune is the farthest planet at about 30 AU, similar in size and mass to Uranus.\n" +
+          "- Its deep blue color arises from methane in its hydrogen-rich atmosphere.\n" +
+          "- Distinct cloud belts and transient dark spots hint at active convection, with winds reaching up to 2200 km/h.\n" +
+          "- It features narrow rings and a complex moon system of 14 satellites, including the captured, retrograde Triton.",
+        opengraphLink: "https://youtu.be/0hTi8TmOqRc?si=Cf5yzLwPx_xEYJow",
+        opengraphImage: "https://img.youtube.com/vi/0hTi8TmOqRc/maxresdefault.jpg",
+      };
+    }
+    if (planetName === "Pluto") {
+      return {
+        title: "Pluto: , Comets, Asteroids, and the Kuiper Belt",
+        summary:
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          "- The solar system comprises terrestrial planets (Mercury, Venus, Earth, Mars) and gas giants (Jupiter, Saturn, Uranus, Neptune).\n" +
+          "- Beyond the planets lie countless small objects: dwarf planets like Pluto and Eris in the Kuiper Belt (30–50 AU) and scattered disk (up to 100 AU).\n" +
+          "- The distant Oort Cloud, tens of thousands of AU away, is the source of icy comets.\n" +
+          "- The asteroid belt between Mars and Jupiter, along with Trojan asteroids, adds to the rocky remnants.\n" +
+          "- Meteors, meteorites, and occasional large impacts have significantly shaped Earth’s history.",
+        opengraphLink: "https://youtu.be/MD7Zt2cGXRc?si=jFpAshJ93JUSifur",
+        opengraphImage: "https://img.youtube.com/vi/MD7Zt2cGXRc/maxresdefault.jpg",
+      };
+    }
+    if (isHeliocentric) {
+      return {
+        title: planetName,
+        summary: `Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})`,
+        opengraphLink: "",
+        opengraphImage: "",
+      };
+    } else if (geocentricDistance) {
+      return {
+        title: planetName,
+        summary: `Distance from Earth: ${geocentricDistance.earthRadii} Earth radii (${geocentricDistance.km})`,
+        opengraphLink: "",
+        opengraphImage: "",
+      };
+    }
+    return { title: planetName, summary: planetName, opengraphLink: "", opengraphImage: "" };
   };
 
   // In geocentric mode, outer bodies (not Earth/Moon) show retrograde motion.
@@ -185,44 +332,17 @@ const Planet: React.FC<PlanetProps> = ({
   orbitSpeed,
   isHeliocentric,
   name,
-  heliocentricDistance,
-  geocentricDistance,
   children,
-  onSelect,
 }) => {
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const [angle, setAngle] = useState(0);
-  const [isSelected, setIsSelected] = useState(false);
-  const [lastClickTime, setLastClickTime] = useState(0);
-
-  const getHoverInfo = () => {
-    if (isHeliocentric) {
-      return `${name}\nDistance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})`;
-    } else if (geocentricDistance) {
-      return `${name}\nDistance from Earth: ${geocentricDistance.earthRadii} Earth radii (${geocentricDistance.km})`;
-    }
-    return name;
-  };
-
-  const handleClick = () => {
-    const now = Date.now();
-    if (now - lastClickTime > 200) {
-      const newSelected = !isSelected;
-      setIsSelected(newSelected);
-      setLastClickTime(now);
-      if (onSelect) {
-        onSelect(newSelected ? getHoverInfo() : null);
-      }
-    }
-  };
 
   useFrame(() => {
     if (!groupRef.current || !meshRef.current || !glowRef.current) return;
     const newAngle = angle + orbitSpeed;
     setAngle(newAngle);
-
     if (orbitRadius > 0) {
       if (isHeliocentric || name === "Earth" || name === "Moon") {
         groupRef.current.position.x = Math.cos(newAngle) * orbitRadius;
@@ -244,10 +364,9 @@ const Planet: React.FC<PlanetProps> = ({
     glowRef.current.rotation.y += 0.005;
   });
 
-  // In geocentric mode, for retrograde bodies (everything except Earth/Moon) we'll add a trail.
   const content = (
     <group ref={groupRef} position={orbitRadius > 0 ? [orbitRadius, 0, 0] : position}>
-      <mesh ref={meshRef} onClick={handleClick}>
+      <mesh ref={meshRef}>
         <sphereGeometry args={[size, 32, 32]} />
         <meshStandardMaterial
           color={color}
@@ -271,35 +390,24 @@ const Planet: React.FC<PlanetProps> = ({
     </group>
   );
 
-  // If geocentric mode and this body is not Earth or Moon, wrap with a trail.
   if (!isHeliocentric && name !== "Earth" && name !== "Moon") {
     return (
-      <Trail
-        local
-        width={2}
-        length={100}
-        decay={1}
-        attenuation={(t) => t}
-        color={color}
-      >
+      <Trail local width={2} length={100} decay={1} attenuation={(t) => t} color={color}>
         {content}
       </Trail>
     );
   }
-
   return content;
 };
 
 const SolarSystem: React.FC = () => {
   const [isHeliocentric, setIsHeliocentric] = useState(true);
-  const [selectedObjectInfo, setSelectedObjectInfo] = useState<string | null>(null);
+  const [selectedObjectInfo, setSelectedObjectInfo] = useState<InfoData | null>(null);
 
   // Prevent scrolling on the main page
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
+    return () => { document.body.style.overflow = 'auto'; };
   }, []);
 
   return (
@@ -311,7 +419,7 @@ const SolarSystem: React.FC = () => {
             left: '20px',
             top: '20px',
             zIndex: 1000,
-            background: 'rgba(0, 0, 0, 0.8)',
+            background: 'rgba(0, 0, 0, 0.3)',
             color: 'white',
             padding: '15px',
             borderRadius: '8px',
@@ -321,9 +429,42 @@ const SolarSystem: React.FC = () => {
             border: '1px solid rgba(255, 255, 255, 0.1)',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
             fontSize: '14px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            justifyContent: 'start',
+            textAlign: 'left',
           }}
         >
-          {selectedObjectInfo}
+          <div style={{overflowY: 'scroll',}}>
+          <h2 style={{ margin: '0 0 5px', color: 'yellow' }}>
+            {selectedObjectInfo.title.split(' ')[0]}
+          </h2>
+          <p style={{ margin: '0 0 10px', whiteSpace: 'pre-wrap', fontSize: '16px' }}>
+            {selectedObjectInfo.summary}
+          </p>
+          {selectedObjectInfo.opengraphLink && (
+            <a
+              href={selectedObjectInfo.opengraphLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                marginTop: '10px',
+                border: '1px solid #4CAF50',
+                borderRadius: '5px',
+                padding: '5px', textAlign: 'center', color: 'white', textDecoration: 'none',
+              }}
+            >
+              <img
+                src={selectedObjectInfo.opengraphImage}
+                alt={selectedObjectInfo.title}
+                style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
+              />
+              <p style={{color: "yellow"}}>Watch this Professor Dave's video on : {selectedObjectInfo.title}</p>
+            </a>
+          )}
+          </div>
         </div>
       )}
       <button
@@ -353,7 +494,7 @@ const SolarSystem: React.FC = () => {
           right: '20px',
           zIndex: 1000,
           padding: '20px',
-          backgroundColor: 'rgba(0, 0, 0, 0.7)',
+          backgroundColor: 'rgba(0, 0, 0, 0.3)',
           color: 'white',
           borderRadius: '5px',
           maxWidth: '300px',
@@ -364,6 +505,42 @@ const SolarSystem: React.FC = () => {
           {isHeliocentric
             ? 'The Sun is at the center of the solar system, with all planets including Pluto and the Kuiper Belt.'
             : 'The Earth is at the center. In geocentric mode, the Sun and outer planets move in retrograde loops leaving behind trails.'}
+          <a
+            href="https://youtu.be/ZGr1nHdzLyk?si=GqCkHerRFvZw63QQ"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ display: 'block', cursor: 'pointer', marginTop: '10px', border: '1px solid #4CAF50', borderRadius: '5px', padding: '5px'  }}
+          >
+            <img
+              src="https://img.youtube.com/vi/ZGr1nHdzLyk/maxresdefault.jpg"
+              alt="Medieval Retrograde Explanation Video"
+              style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
+            />
+            <p style={{ color: "yellow", textAlign: 'center', margin: '5px 0 0' }}>
+              History of Astronomy Part 3: Copernicus and Heliocentrism
+            </p>
+          </a>
+          <a
+            href="https://youtube.com/playlist?list=PLybg94GvOJ9E9BcCODbTNw2xU4b1cWSi6&si=BUI5z12KL6b0E9gi"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'block',
+              marginTop: '10px',
+              border: '1px solid #4CAF50',
+              borderRadius: '5px',
+              padding: '5px'
+            }}
+          >
+            <img
+              src="https://i.ytimg.com/vi/i8U9ZjRXClI/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLAn5cDUQC58G8iff1vXE-EOLQxTew"
+              alt="Astronomy/Astrophysics"
+              style={{ width: '100%', maxWidth: '300px', height: '50px', objectFit: 'cover' , cursor: 'pointer' }}
+            />
+            <p style={{ color: "yellow", textAlign: 'center', margin: '5px 0 0' }}>
+              <span style={{ color: 'white' }}>(Playlist)</span> Professor Dave Explains : Astronomy/Astrophysics
+            </p>
+          </a>
         </p>
       </div>
       <Canvas camera={{ position: [0, 800, 800], fov: 45 }}>
@@ -582,7 +759,7 @@ const SolarSystem: React.FC = () => {
           />
         )}
 
-        {/* Earth with nested Moon (Earth remains fixed in geocentric mode) */}
+        {/* Earth with nested Moon */}
         <Planet
           position={isHeliocentric ? [10, 0, 0] : [0, 0, 0]}
           onSelect={setSelectedObjectInfo}

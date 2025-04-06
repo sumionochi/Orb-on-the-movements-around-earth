@@ -13,6 +13,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  font-family: 'MedievalSharp', cursive;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
