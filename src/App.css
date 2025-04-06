@@ -1,13 +1,26 @@
 #root {
-  max-width: 1280px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 0rem;
   text-align: center;
 }
 
 body {
   font-family: 'MedievalSharp', cursive;
 }
+
+.glowText {
+  color: white;
+  text-shadow: 
+  0 0 5px  #FFF,
+      0 0 10px #FFF,
+      0 0 20px #FFF,
+      0 0 30px #FFF,
+      0 0 40px #FFF,
+      0 0 70px #FFF,
+      0 0 80px #FFF
+}
+
 
 .logo {
   height: 6em;

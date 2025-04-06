@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Trail } from '@react-three/drei';
 import * as THREE from 'three';
+import CameraTransition from './CameraTransition';
 
 interface InfoData {
   title: string;
@@ -403,6 +404,15 @@ const Planet: React.FC<PlanetProps> = ({
 const SolarSystem: React.FC = () => {
   const [isHeliocentric, setIsHeliocentric] = useState(true);
   const [selectedObjectInfo, setSelectedObjectInfo] = useState<InfoData | null>(null);
+// This will flip each time user toggles, forcing a new camera animation
+const [animTrigger, setAnimTrigger] = useState(false)
+
+// Example camera positions:
+const heliocentricPos = useMemo(() => new THREE.Vector3(0, 500, 500), [])
+const geocentricPos = useMemo(() => new THREE.Vector3(0, 400, 400), [])
+
+// Decide final camera pos based on isHeliocentric
+const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
 
   // Prevent scrolling on the main page
   useEffect(() => {
@@ -436,56 +446,65 @@ const SolarSystem: React.FC = () => {
             textAlign: 'left',
           }}
         >
-          <div style={{overflowY: 'scroll',}}>
-          <h2 style={{ margin: '0 0 5px', color: 'yellow' }}>
-            {selectedObjectInfo.title.split(' ')[0]}
-          </h2>
-          <p style={{ margin: '0 0 10px', whiteSpace: 'pre-wrap', fontSize: '16px' }}>
-            {selectedObjectInfo.summary}
-          </p>
-          {selectedObjectInfo.opengraphLink && (
-            <a
-              href={selectedObjectInfo.opengraphLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'block',
-                marginTop: '10px',
-                border: '1px solid #4CAF50',
-                borderRadius: '5px',
-                padding: '5px', textAlign: 'center', color: 'white', textDecoration: 'none',
-              }}
-            >
-              <img
-                src={selectedObjectInfo.opengraphImage}
-                alt={selectedObjectInfo.title}
-                style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
-              />
-              <p style={{color: "yellow"}}>Watch this Professor Dave's video on : {selectedObjectInfo.title}</p>
-            </a>
-          )}
+          {/* Content container for scrolling */}
+          <div style={{ overflowY: 'scroll', maxHeight: '48rem' }}>
+            <h2 style={{ margin: '0 0 5px', color: 'yellow' }}>
+              {selectedObjectInfo.title.split(' ')[0]}
+            </h2>
+            <p style={{ margin: '0 0 10px', whiteSpace: 'pre-wrap', fontSize: '16px' }}>
+              {selectedObjectInfo.summary}
+            </p>
+            {selectedObjectInfo.opengraphLink && (
+              <a
+                href={selectedObjectInfo.opengraphLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'block',
+                  marginTop: '10px',
+                  border: '1px solid #4CAF50',
+                  borderRadius: '5px',
+                  padding: '5px',
+                  textAlign: 'center',
+                  color: 'white',
+                  textDecoration: 'none',
+                }}
+              >
+                <img
+                  src={selectedObjectInfo.opengraphImage}
+                  alt={selectedObjectInfo.title}
+                  style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
+                />
+                <p style={{ color: 'yellow' }}>
+                  Watch this Professor Dave's video on : {selectedObjectInfo.title}
+                </p>
+              </a>
+            )}
           </div>
         </div>
       )}
       <button
         onClick={() => {
           setIsHeliocentric(!isHeliocentric);
+          // Flip our animTrigger so camera resets
+          setAnimTrigger((prev) => !prev)
           setSelectedObjectInfo(null);
         }}
         style={{
           position: 'absolute',
           top: '20px',
-          right: '20px',
+          right: '22px',
           zIndex: 1000,
           padding: '10px 20px',
-          backgroundColor: '#4CAF50',
+          backgroundColor: 'black',
           color: 'white',
           border: 'none',
           borderRadius: '5px',
           cursor: 'pointer',
-        }}
+          opacity: 0.8,
+        }}        
       >
-        Toggle {isHeliocentric ? 'Geocentric' : 'Heliocentric'}
+        Toggle {isHeliocentric ? 'to Geocentric' : 'to Heliocentric'}
       </button>
       <div
         style={{
@@ -543,7 +562,15 @@ const SolarSystem: React.FC = () => {
           </a>
         </p>
       </div>
-      <Canvas camera={{ position: [0, 800, 800], fov: 45 }}>
+      <div style={{position:'absolute', top:'20', left:'50%', transform:'translateX(-50%)', display:'flex', flexDirection: 'column', gap:'0px'}}>
+        <h2 className="glowText">Orb: On the movement around earth</h2>
+      </div>
+      <h4 style={{position:'absolute', top:'40px', left:'50%', transform:'translateX(-50%)', display:'flex', flexDirection: 'column', gap:'0px'}}>click on orbital paths to know more ...</h4>
+      <Canvas camera={{ position: [0, 200, 500], fov: 45 }}>
+      <CameraTransition 
+          targetPos={targetPos}
+          triggerAnimation={animTrigger}
+        />
         <ambientLight intensity={0.15} />
         <pointLight position={[10, 10, 10]} intensity={1.0} color="#E6F3FF" />
         <pointLight position={[-10, -10, -10]} intensity={0.6} color="#F0F8FF" />
