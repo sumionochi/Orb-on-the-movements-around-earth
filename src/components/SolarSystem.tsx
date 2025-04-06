@@ -474,6 +474,7 @@ function PotoskiPopup() {
           width: '100%',
           boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
           position: 'relative',
+          margin: '1rem'
         }}
       >
         <button
@@ -517,7 +518,15 @@ function PotoskiPopup() {
 const SolarSystem: React.FC = () => {
   const [isHeliocentric, setIsHeliocentric] = useState(true);
   const [selectedObjectInfo, setSelectedObjectInfo] = useState<InfoData | null>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  const [collapsedSocial, setCollapsedSocial] = useState(false);
 
+  const togglePanel = () => {
+    setCollapsed(!collapsed);
+  };
+  const togglePanelSocial = () => {
+    setCollapsedSocial(!collapsedSocial);
+  };
   // Flip each time user toggles => triggers camera animation
   const [animTrigger, setAnimTrigger] = useState(false);
 
@@ -542,65 +551,81 @@ const SolarSystem: React.FC = () => {
 
       {/* Info card if planet orbit ring was clicked */}
       {selectedObjectInfo && (
-        <div
-          style={{
-            position: 'fixed',
-            left: '20px',
-            top: '20px',
-            zIndex: 1000,
-            background: 'rgba(0, 0, 0, 0.3)',
+          
+          <div
+            style={{
+              position: 'fixed',
+              left: '20px',
+              top: '20px',
+              zIndex: 1000,
+              background: 'rgba(0, 0, 0, 0.3)',
+              color: 'white',
+              padding: '15px',
+              borderRadius: '8px',
+              maxWidth: '300px',
+              whiteSpace: 'pre-line',
+              backdropFilter: 'blur(5px)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+              fontSize: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'start',
+              textAlign: 'left',
+            }}
+          >
+            <button
+  onClick={() => setSelectedObjectInfo(null)}
+  style={{
+            position: 'absolute',
+            bottom: '-3rem',
+            left: '-1rem',
+            cursor: 'pointer',
+            background: 'none',
+            border: 'none',
+            fontSize: '1rem',
             color: 'white',
-            padding: '15px',
-            borderRadius: '8px',
-            maxWidth: '300px',
-            whiteSpace: 'pre-line',
-            backdropFilter: 'blur(5px)',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            fontSize: '14px',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            justifyContent: 'start',
-            textAlign: 'left',
           }}
         >
-          <div style={{ overflowY: 'scroll', maxHeight: '48rem' }}>
-            <h2 style={{ margin: '0 0 5px', color: 'yellow' }}>
-              {selectedObjectInfo.title.split(' ')[0]}
-            </h2>
-            <p style={{ margin: '0 0 10px', whiteSpace: 'pre-wrap', fontSize: '16px' }}>
-              {selectedObjectInfo.summary}
-            </p>
-            {selectedObjectInfo.opengraphLink && (
-              <a
-                href={selectedObjectInfo.opengraphLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  display: 'block',
-                  marginTop: '10px',
-                  border: '1px solid #4CAF50',
-                  borderRadius: '5px',
-                  padding: '5px',
-                  textAlign: 'center',
-                  color: 'white',
-                  textDecoration: 'none',
-                }}
-              >
-                <img
-                  src={selectedObjectInfo.opengraphImage}
-                  alt={selectedObjectInfo.title}
-                  style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
-                />
-                <p style={{ color: 'yellow' }}>
-                  Watch this Professor Dave's video on : {selectedObjectInfo.title}
-                </p>
-              </a>
-            )}
+          X
+        </button>
+            <div style={{ overflowY: 'scroll', maxHeight: '48rem' }}>
+              <h2 style={{ margin: '0 0 5px', color: 'yellow' }}>
+                {selectedObjectInfo.title.split(' ')[0]}
+              </h2>
+              <p style={{ margin: '0 0 10px', whiteSpace: 'pre-wrap', fontSize: '16px' }}>
+                {selectedObjectInfo.summary}
+              </p>
+              {selectedObjectInfo.opengraphLink && (
+                <a
+                  href={selectedObjectInfo.opengraphLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'block',
+                    marginTop: '10px',
+                    border: '1px solid #4CAF50',
+                    borderRadius: '5px',
+                    padding: '5px',
+                    textAlign: 'center',
+                    color: 'white',
+                    textDecoration: 'none',
+                  }}
+                >
+                  <img
+                    src={selectedObjectInfo.opengraphImage}
+                    alt={selectedObjectInfo.title}
+                    style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
+                  />
+                  <p style={{ color: 'yellow' }}>
+                    Watch this Professor Dave's video on : {selectedObjectInfo.title}
+                  </p>
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}     
 
       {/* Toggle Button for Helio/Geo */}
       <button
@@ -628,75 +653,113 @@ const SolarSystem: React.FC = () => {
 
       {/* Info top-right */}
       <div
-        style={{
-          position: 'absolute',
-          top: '80px',
-          right: '20px',
-          zIndex: 1000,
-          padding: '20px',
-          backgroundColor: 'rgba(0, 0, 0, 0.3)',
-          color: 'white',
-          borderRadius: '5px',
-          maxWidth: '300px',
-        }}
-      >
-        <h3>{isHeliocentric ? 'Heliocentric Model' : 'Geocentric Model'}</h3>
-        <p>
-          {isHeliocentric
-            ? `The Sun is the center of the solar system, simplifying planetary motion by showing retrograde motion as a perspective effect from Earth. This includes all planets: Mercury through Neptune and even Pluto.`
-            : `Earth is the center of the universe, with complex epicycles devised to explain the apparent retrograde motions of planets.`}
-          <a
-            href="https://youtu.be/ZGr1nHdzLyk?si=GqCkHerRFvZw63QQ"
-            target="_blank"
-            rel="noopener noreferrer"
+      style={{
+        position: 'absolute',
+        top: '80px',
+        right: '20px',
+        zIndex: 1000,
+        padding: '20px',
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        color: 'white',
+        borderRadius: '5px',
+        maxWidth: '300px',
+        transition: 'all 0.3s ease', // Optional transition for smoothing
+        overflow: 'hidden',
+      }}
+    >
+      {/* If collapsed, show a small container with the "!" symbol */}
+      {collapsed ? (
+        <div
+          onClick={togglePanel}
+          style={{
+            cursor: 'pointer',
+            fontSize: '1.5rem',
+            textAlign: 'center',
+            lineHeight: '1',
+            userSelect: 'none',
+          }}
+        >
+          !
+        </div>
+      ) : (
+        // If not collapsed, show the full info panel
+        <>
+          {/* "X" button in the top-right corner */}
+          <button
+            onClick={togglePanel}
             style={{
-              display: 'block',
+              position: 'absolute',
+              top: '5px',
+              right: '5px',
               cursor: 'pointer',
-              marginTop: '10px',
-              border: '1px solid #4CAF50',
-              borderRadius: '5px',
-              padding: '5px',
+              background: 'none',
+              border: 'none',
+              fontSize: '1rem',
+              color: 'white',
             }}
           >
-            <img
-              src="https://img.youtube.com/vi/ZGr1nHdzLyk/maxresdefault.jpg"
-              alt="Medieval Retrograde Explanation Video"
-              style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
-            />
-            <h5 style={{ color: 'white' }}>Real world references from Orb</h5>
-            <p style={{ color: 'yellow', textAlign: 'center', margin: '0px 0 0' }}>
-              History of Astronomy Part 3: Copernicus and Heliocentrism <br />
-              (the idea orb challenges : 4:54 min)
-            </p>
-          </a>
-          <a
-            href="https://youtube.com/playlist?list=PLybg94GvOJ9E9BcCODbTNw2xU4b1cWSi6&si=BUI5z12KL6b0E9gi"
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              display: 'block',
-              marginTop: '10px',
-              border: '1px solid #4CAF50',
-              borderRadius: '5px',
-              padding: '5px',
-            }}
-          >
-            <img
-              src="https://i.ytimg.com/vi/i8U9ZjRXClI/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLAn5cDUQC58G8iff1vXE-EOLQxTew"
-              alt="Astronomy/Astrophysics"
+            ✕
+          </button>
+
+          <h3>{isHeliocentric ? 'Heliocentric Model' : 'Geocentric Model'}</h3>
+          <p>
+            {isHeliocentric
+              ? `The Sun is the center of the solar system, simplifying planetary motion by showing retrograde motion as a perspective effect from Earth. This includes all planets: Mercury through Neptune and even Pluto.`
+              : `Earth is the center of the universe, with complex epicycles devised to explain the apparent retrograde motions of planets.`}
+            <a
+              href="https://youtu.be/ZGr1nHdzLyk?si=GqCkHerRFvZw63QQ"
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
-                width: '100%',
-                maxWidth: '300px',
-                height: '50px',
-                objectFit: 'cover',
+                display: 'block',
                 cursor: 'pointer',
+                marginTop: '10px',
+                border: '1px solid #4CAF50',
+                borderRadius: '5px',
+                padding: '5px',
               }}
-            />
-            <p style={{ color: 'yellow', textAlign: 'center', margin: '5px 0 0' }}>
-              <span style={{ color: 'white' }}>(Playlist)</span> Professor Dave Explains : Astronomy/Astrophysics
-            </p>
-          </a>
-        </p>
+            >
+              <img
+                src="https://img.youtube.com/vi/ZGr1nHdzLyk/maxresdefault.jpg"
+                alt="Medieval Retrograde Explanation Video"
+                style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
+              />
+              <h5 style={{ color: 'white' }}>Real world references from Orb</h5>
+              <p style={{ color: 'yellow', textAlign: 'center', margin: '0px 0 0' }}>
+                History of Astronomy Part 3: Copernicus and Heliocentrism <br />
+                (the idea orb challenges : 4:54 min)
+              </p>
+            </a>
+            <a
+              href="https://youtube.com/playlist?list=PLybg94GvOJ9E9BcCODbTNw2xU4b1cWSi6&si=BUI5z12KL6b0E9gi"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                marginTop: '10px',
+                border: '1px solid #4CAF50',
+                borderRadius: '5px',
+                padding: '5px',
+              }}
+            >
+              <img
+                src="https://i.ytimg.com/vi/i8U9ZjRXClI/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLAn5cDUQC58G8iff1vXE-EOLQxTew"
+                alt="Astronomy/Astrophysics"
+                style={{
+                  width: '100%',
+                  maxWidth: '300px',
+                  height: '50px',
+                  objectFit: 'cover',
+                  cursor: 'pointer',
+                }}
+              />
+              <p style={{ color: 'yellow', textAlign: 'center', margin: '5px 0 0' }}>
+                <span style={{ color: 'white' }}>(Playlist)</span> Professor Dave Explains : Astronomy/Astrophysics
+              </p>
+            </a>
+          </p>
+        </>
+      )}
       </div>
 
       {/* Additional small headings */}
@@ -710,24 +773,12 @@ const SolarSystem: React.FC = () => {
           flexDirection: 'column',
           gap: '0px',
           textAlign: 'center',
+          width: '100%',
         }}
       >
         <h2 className="glowText">Orb: On the movement around earth tribute</h2>
+        <h4>click on orbital paths to know more ...</h4>
       </div>
-      <h4
-        style={{
-          position: 'absolute',
-          top: '40px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0px',
-          marginTop: '40px',
-        }}
-      >
-        click on orbital paths to know more ...
-      </h4>
 
       {/* Main Canvas */}
       <Canvas camera={{ position: [0, 200, 500], fov: 45 }}>
@@ -1131,7 +1182,44 @@ const SolarSystem: React.FC = () => {
       </Canvas>
 
       {/* Footer with social links */}
-      <div
+      {collapsedSocial ? (
+        <div
+          onClick={togglePanelSocial}
+          style={{
+            cursor: 'pointer',
+            fontSize: '1.5rem',
+            textAlign: 'center',
+            lineHeight: '1',
+            userSelect: 'none',
+            position: 'absolute',
+              bottom: '4rem',
+              right: '0px',
+              margin: '0 1rem 0 0',
+          }}
+        >
+          Info
+        </div>
+      ) : (
+        // If not collapsed, show the full info panel
+        <>
+          {/* "X" button in the top-right corner */}
+          <button
+            onClick={togglePanelSocial}
+            style={{
+              position: 'absolute',
+              bottom: '4rem',
+              right: '0px',
+              cursor: 'pointer',
+              background: 'none',
+              border: 'none',
+              fontSize: '1rem',
+              color: 'white',
+            }}
+          >
+            ✕
+          </button>
+
+          <div
         style={{
           position: 'fixed',
           bottom: '20px',
@@ -1182,7 +1270,7 @@ const SolarSystem: React.FC = () => {
             Twitter
           </a>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'center', gap: '1rem', border: '5px' }}>
           <a
             href="https://www.youtube.com/@ProfessorDaveExplains"
             target="_blank"
@@ -1201,6 +1289,9 @@ const SolarSystem: React.FC = () => {
           </a>
         </div>
       </div>
+        </>
+      )}
+      
     </div>
   );
 };
