@@ -115,10 +115,10 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
         <sphereGeometry args={[size, 32, 32]} />
         <meshStandardMaterial
           color={color}
-          roughness={0.3}
-          metalness={0.2}
+          roughness={0.2}
+          metalness={0.3}
           emissive={color}
-          emissiveIntensity={0.2}
+          emissiveIntensity={0.4}
         />
       </mesh>
       <mesh ref={glowRef} position={position} scale={[1.2, 1.2, 1.2]}>
@@ -126,7 +126,7 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
         <meshBasicMaterial
           color={color}
           transparent
-          opacity={0.15}
+          opacity={0.2}
           side={THREE.BackSide}
         />
       </mesh>
@@ -195,9 +195,12 @@ const SolarSystem: React.FC = () => {
         </p>
       </div>
       <Canvas camera={{ position: [0, 30, 30], fov: 60 }}>
-        <ambientLight intensity={0.3} />
-        <pointLight position={[10, 10, 10]} intensity={0.8} color="#FFF5E1" />
-        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#E8F6FF" />
+        <ambientLight intensity={0.2} />
+        <pointLight position={[10, 10, 10]} intensity={1.2} color="#FFF5E1" />
+        <pointLight position={[-10, -10, -10]} intensity={0.8} color="#E8F6FF" />
+        <Stars radius={300} depth={80} count={15000} factor={7} saturation={0.8} fade speed={1.2} />
+        <fog attach="fog" args={["#000000", 80, 500]} />
+        <Stars radius={200} depth={60} count={8000} factor={5} saturation={0.3} fade />
         <Stars radius={200} depth={60} count={10000} factor={6} saturation={0.5} fade speed={1.5} />
         <fog attach="fog" args={["#080808", 100, 400]} />
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
@@ -360,7 +363,7 @@ const SolarSystem: React.FC = () => {
           />
         )}
 
-        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} />
+        <OrbitControls enablePan={true} enableZoom={true} enableRotate={true} maxDistance={500} />
       </Canvas>
     </div>
   );
