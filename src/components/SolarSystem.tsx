@@ -1,10 +1,10 @@
 import { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars, Html } from '@react-three/drei';
+import { OrbitControls, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface PlanetProps {
-  position: [number, number, number]; // Used only for fixed (non-orbiting) bodies
+  position: [number, number, number]; // For fixed (non-orbiting) bodies
   size: number;
   color: string;
   orbitRadius: number;
@@ -14,6 +14,7 @@ interface PlanetProps {
   heliocentricDistance: { au: number; km: string };
   geocentricDistance?: { earthRadii: number; km: string };
   children?: React.ReactNode;
+  onSelect?: (info: string | null) => void;
 }
 
 interface OrbitRingProps {
@@ -25,6 +26,7 @@ interface OrbitRingProps {
   heliocentricDistance: { au: number; km: string };
   geocentricDistance?: { earthRadii: number; km: string };
   isHeliocentric: boolean;
+  onSelect?: (info: string | null) => void;
 }
 
 const OrbitRing: React.FC<OrbitRingProps> = ({
@@ -35,6 +37,7 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
   heliocentricDistance,
   geocentricDistance,
   isHeliocentric,
+  onSelect,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
@@ -54,7 +57,23 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
 
   return (
     <group>
-      <mesh ref={meshRef} rotation={[Math.PI / 2, 0, 0]}>
+      <mesh
+        ref={meshRef}
+        rotation={[Math.PI / 2, 0, 0]}
+        onPointerOver={() => setIsHovered(true)}
+        onPointerOut={() => setIsHovered(false)}
+        onClick={() => {
+          const now = Date.now();
+          if (now - lastClickTime > 200) {
+            const newSelected = !isSelected;
+            setIsSelected(newSelected);
+            setLastClickTime(now);
+            if (onSelect) {
+              onSelect(newSelected ? getHoverInfo() : null);
+            }
+          }
+        }}
+      >
         <torusGeometry args={[radius, radius === 394.8 ? 0.2 : 0.05, 32, 100]} />
         <meshStandardMaterial
           color={color}
@@ -66,42 +85,7 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
           metalness={0.9}
         />
       </mesh>
-      <mesh
-        rotation={[Math.PI / 2, 0, 0]}
-        onPointerOver={() => setIsHovered(true)}
-        onPointerOut={() => setIsHovered(false)}
-        onClick={() => {
-          const now = Date.now();
-          if (now - lastClickTime > 200) {
-            setIsSelected(!isSelected);
-            setLastClickTime(now);
-          }
-        }}
-      >
-        <torusGeometry args={[radius, 0.5, 32, 100]} />
-        <meshBasicMaterial transparent opacity={0} />
-      </mesh>
-      {isHovered && (
-        <meshBasicMaterial color={color} transparent opacity={0.3} blending={THREE.AdditiveBlending} />
-      )}
-      <Html position={[0, 2, 0]}>
-        <div
-          style={{
-            background: 'rgba(0, 0, 0, 0.8)',
-            color: 'white',
-            padding: '8px',
-            borderRadius: '4px',
-            whiteSpace: 'pre-line',
-            fontSize: '14px',
-            pointerEvents: 'none',
-            opacity: isSelected ? 1 : 0,
-            transition: 'opacity 0.3s ease-in-out',
-            display: isSelected ? 'block' : 'none',
-          }}
-        >
-          {getHoverInfo()}
-        </div>
-      </Html>
+      {/* Removed the Html overlay so info only shows at fixed left side */}
     </group>
   );
 };
@@ -117,39 +101,15 @@ const Planet: React.FC<PlanetProps> = ({
   heliocentricDistance,
   geocentricDistance,
   children,
+  onSelect,
 }) => {
-  // Use a group for the orbiting body so that its transform is relative
+  // Use a group so that orbiting is computed relative to a pivot.
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const [angle, setAngle] = useState(0);
   const [isSelected, setIsSelected] = useState(false);
   const [lastClickTime, setLastClickTime] = useState(0);
-
-  const handleClick = () => {
-    const now = Date.now();
-    if (now - lastClickTime > 200) {
-      setIsSelected(!isSelected);
-      setLastClickTime(now);
-    }
-  };
-
-  useFrame(() => {
-    if (!groupRef.current || !meshRef.current || !glowRef.current) return;
-    const newAngle = angle + orbitSpeed;
-    setAngle(newAngle);
-    // If orbitRadius > 0, update the group’s position (the orbit center is the parent's origin)
-    if (orbitRadius > 0) {
-      groupRef.current.position.x = Math.cos(newAngle) * orbitRadius;
-      groupRef.current.position.z = Math.sin(newAngle) * orbitRadius;
-    } else {
-      // For bodies that don't orbit (like a fixed Sun in heliocentric mode)
-      groupRef.current.position.set(...position);
-    }
-    // Rotate the actual mesh for a subtle spin effect
-    meshRef.current.rotation.y += 0.005;
-    glowRef.current.rotation.y += 0.005;
-  });
 
   const getHoverInfo = () => {
     if (isHeliocentric) {
@@ -160,10 +120,34 @@ const Planet: React.FC<PlanetProps> = ({
     return name;
   };
 
+  const handleClick = () => {
+    const now = Date.now();
+    if (now - lastClickTime > 200) {
+      const newSelected = !isSelected;
+      setIsSelected(newSelected);
+      setLastClickTime(now);
+      if (onSelect) {
+        onSelect(newSelected ? getHoverInfo() : null);
+      }
+    }
+  };
+
+  useFrame(() => {
+    if (!groupRef.current || !meshRef.current || !glowRef.current) return;
+    const newAngle = angle + orbitSpeed;
+    setAngle(newAngle);
+    if (orbitRadius > 0) {
+      groupRef.current.position.x = Math.cos(newAngle) * orbitRadius;
+      groupRef.current.position.z = Math.sin(newAngle) * orbitRadius;
+    } else {
+      groupRef.current.position.set(...position);
+    }
+    // Subtle spin for visual effect
+    meshRef.current.rotation.y += 0.005;
+    glowRef.current.rotation.y += 0.005;
+  });
+
   return (
-    // The group here represents the pivot for the orbit.
-    // For orbiting bodies (orbitRadius > 0) the initial position is set to [orbitRadius, 0, 0].
-    // For fixed bodies (like the Sun in heliocentric mode), use the provided position.
     <group ref={groupRef} position={orbitRadius > 0 ? [orbitRadius, 0, 0] : position}>
       <mesh ref={meshRef} onClick={handleClick}>
         <sphereGeometry args={[size, 32, 32]} />
@@ -185,24 +169,7 @@ const Planet: React.FC<PlanetProps> = ({
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-      <Html position={[0, size + 1, 0]}>
-        <div
-          style={{
-            background: 'rgba(0, 0, 0, 0.8)',
-            color: 'white',
-            padding: '8px',
-            borderRadius: '4px',
-            whiteSpace: 'pre-line',
-            fontSize: '14px',
-            pointerEvents: 'none',
-            opacity: isSelected ? 1 : 0,
-            transition: 'opacity 0.3s ease-in-out',
-            display: isSelected ? 'block' : 'none',
-          }}
-        >
-          {getHoverInfo()}
-        </div>
-      </Html>
+      {/* Removed the Html overlay here as well */}
       {children}
     </group>
   );
@@ -210,22 +177,49 @@ const Planet: React.FC<PlanetProps> = ({
 
 const SolarSystem: React.FC = () => {
   const [isHeliocentric, setIsHeliocentric] = useState(true);
+  const [selectedObjectInfo, setSelectedObjectInfo] = useState<string | null>(null);
 
   return (
     <div style={{ height: '100vh', width: '100vw' }}>
+      {selectedObjectInfo && (
+        <div
+          style={{
+            position: 'fixed',
+            left: '20px',
+            top: '20px',
+            zIndex: 1000,
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '15px',
+            borderRadius: '8px',
+            maxWidth: '300px',
+            whiteSpace: 'pre-line',
+            backdropFilter: 'blur(5px)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            fontSize: '14px'
+          }}
+        >
+          {selectedObjectInfo}
+        </div>
+      )}
       <button
-        onClick={() => setIsHeliocentric(!isHeliocentric)}
+        onClick={() => {
+          setIsHeliocentric(!isHeliocentric);
+          // Clear any selected object info when toggling models
+          setSelectedObjectInfo(null);
+        }}
         style={{
           position: 'absolute',
           top: '20px',
-          left: '20px',
+          right: '20px',
           zIndex: 1000,
           padding: '10px 20px',
           backgroundColor: '#4CAF50',
           color: 'white',
           border: 'none',
           borderRadius: '5px',
-          cursor: 'pointer',
+          cursor: 'pointer'
         }}
       >
         Toggle {isHeliocentric ? 'Geocentric' : 'Heliocentric'}
@@ -233,14 +227,14 @@ const SolarSystem: React.FC = () => {
       <div
         style={{
           position: 'absolute',
-          top: '20px',
+          top: '80px',
           right: '20px',
           zIndex: 1000,
           padding: '20px',
           backgroundColor: 'rgba(0, 0, 0, 0.7)',
           color: 'white',
           borderRadius: '5px',
-          maxWidth: '300px',
+          maxWidth: '300px'
         }}
       >
         <h3>{isHeliocentric ? 'Heliocentric Model' : 'Geocentric Model'}</h3>
@@ -266,7 +260,7 @@ const SolarSystem: React.FC = () => {
         <fog attach="fog" args={['#000B2E', 400, 1600]} />
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
 
-        {/* Orbit Rings for the planets */}
+        {/* Orbit Rings */}
         {!isHeliocentric && (
           <OrbitRing
             radius={120}
@@ -276,6 +270,7 @@ const SolarSystem: React.FC = () => {
             heliocentricDistance={{ au: 0, km: "0 km" }}
             geocentricDistance={{ earthRadii: 1200, km: "~7,645,200 km" }}
             isHeliocentric={isHeliocentric}
+            onSelect={setSelectedObjectInfo}
           />
         )}
         <OrbitRing
@@ -286,6 +281,7 @@ const SolarSystem: React.FC = () => {
           heliocentricDistance={{ au: 0.39, km: "~57.9 million km" }}
           geocentricDistance={{ earthRadii: 79, km: "~503,000 km" }}
           isHeliocentric={isHeliocentric}
+          onSelect={setSelectedObjectInfo}
         />
         <OrbitRing
           radius={7.2}
@@ -295,16 +291,18 @@ const SolarSystem: React.FC = () => {
           heliocentricDistance={{ au: 0.72, km: "~108.2 million km" }}
           geocentricDistance={{ earthRadii: 120, km: "~764,500 km" }}
           isHeliocentric={isHeliocentric}
+          onSelect={setSelectedObjectInfo}
         />
         {isHeliocentric && (
-            <OrbitRing
+          <OrbitRing
             radius={10}
             color="#4169E1"
             isVisible
             planetName="Earth"
-            heliocentricDistance={{ au: 1.00, km: "~149.6 million km" }}
+            heliocentricDistance={{ au: 1.0, km: "~149.6 million km" }}
             geocentricDistance={{ earthRadii: 0, km: "0 km" }}
             isHeliocentric={isHeliocentric}
+            onSelect={setSelectedObjectInfo}
           />
         )}
         <OrbitRing
@@ -315,6 +313,7 @@ const SolarSystem: React.FC = () => {
           heliocentricDistance={{ au: 1.52, km: "~227.9 million km" }}
           geocentricDistance={{ earthRadii: 1800, km: "~11,468,000 km" }}
           isHeliocentric={isHeliocentric}
+          onSelect={setSelectedObjectInfo}
         />
         <OrbitRing
           radius={52}
@@ -324,6 +323,7 @@ const SolarSystem: React.FC = () => {
           heliocentricDistance={{ au: 5.20, km: "~778.6 million km" }}
           geocentricDistance={{ earthRadii: 2400, km: "~15,290,000 km" }}
           isHeliocentric={isHeliocentric}
+          onSelect={setSelectedObjectInfo}
         />
         <OrbitRing
           radius={95.8}
@@ -333,6 +333,7 @@ const SolarSystem: React.FC = () => {
           heliocentricDistance={{ au: 9.58, km: "~1.433 billion km" }}
           geocentricDistance={{ earthRadii: 3600, km: "~22,935,600 km" }}
           isHeliocentric={isHeliocentric}
+          onSelect={setSelectedObjectInfo}
         />
         {isHeliocentric && (
           <>
@@ -343,6 +344,7 @@ const SolarSystem: React.FC = () => {
               planetName="Uranus"
               heliocentricDistance={{ au: 19.20, km: "~2.872 billion km" }}
               isHeliocentric={isHeliocentric}
+              onSelect={setSelectedObjectInfo}
             />
             <OrbitRing
               radius={300.5}
@@ -351,6 +353,7 @@ const SolarSystem: React.FC = () => {
               planetName="Neptune"
               heliocentricDistance={{ au: 30.05, km: "~4.495 billion km" }}
               isHeliocentric={isHeliocentric}
+              onSelect={setSelectedObjectInfo}
             />
             <OrbitRing
               radius={394.8}
@@ -359,6 +362,7 @@ const SolarSystem: React.FC = () => {
               planetName="Pluto"
               heliocentricDistance={{ au: 39.48, km: "~5.906 billion km" }}
               isHeliocentric={isHeliocentric}
+              onSelect={setSelectedObjectInfo}
             />
           </>
         )}
@@ -366,6 +370,7 @@ const SolarSystem: React.FC = () => {
         {/* Sun */}
         <Planet
           position={[0, 0, 0]}
+          onSelect={setSelectedObjectInfo}
           size={2}
           color="#FFD700"
           orbitRadius={isHeliocentric ? 0 : 120}
@@ -379,6 +384,7 @@ const SolarSystem: React.FC = () => {
         {/* Mercury */}
         <Planet
           position={[3.9, 0, 0]}
+          onSelect={setSelectedObjectInfo}
           size={0.4}
           color="#A0522D"
           orbitRadius={3.9}
@@ -392,6 +398,7 @@ const SolarSystem: React.FC = () => {
         {/* Venus */}
         <Planet
           position={[7.2, 0, 0]}
+          onSelect={setSelectedObjectInfo}
           size={0.9}
           color="#DEB887"
           orbitRadius={7.2}
@@ -404,9 +411,8 @@ const SolarSystem: React.FC = () => {
 
         {/* Earth with nested Moon */}
         <Planet
-          // In heliocentric mode, Earth’s orbit is computed using orbitRadius (10).
-          // In geocentric mode, Earth is fixed at the center.
           position={isHeliocentric ? [10, 0, 0] : [0, 0, 0]}
+          onSelect={setSelectedObjectInfo}
           size={1}
           color="#4169E1"
           orbitRadius={isHeliocentric ? 10 : 0}
@@ -416,9 +422,10 @@ const SolarSystem: React.FC = () => {
           heliocentricDistance={{ au: 1.0, km: "~149.6 million km" }}
           geocentricDistance={{ earthRadii: 0, km: "0 km" }}
         >
-          {/* Nest the Moon as a child of Earth so its orbit is relative to Earth */}
+          {/* Moon nested inside Earth */}
           <Planet
-            position={[0, 0, 0]} // starts at Earth's center
+            position={[0, 0, 0]}
+            onSelect={setSelectedObjectInfo}
             size={0.27}
             color="#FFFFFF"
             orbitRadius={2}
@@ -436,12 +443,14 @@ const SolarSystem: React.FC = () => {
             heliocentricDistance={{ au: 1.0, km: "~149.6 million km" }}
             geocentricDistance={{ earthRadii: 60.3, km: "~384,400 km" }}
             isHeliocentric={isHeliocentric}
+            onSelect={setSelectedObjectInfo}
           />
         </Planet>
 
         {/* Mars */}
         <Planet
           position={[15.2, 0, 0]}
+          onSelect={setSelectedObjectInfo}
           size={0.5}
           color="#FF4500"
           orbitRadius={15.2}
@@ -455,6 +464,7 @@ const SolarSystem: React.FC = () => {
         {/* Jupiter */}
         <Planet
           position={[52, 0, 0]}
+          onSelect={setSelectedObjectInfo}
           size={2}
           color="#DEB887"
           orbitRadius={52}
@@ -468,6 +478,7 @@ const SolarSystem: React.FC = () => {
         {/* Saturn */}
         <Planet
           position={[95.8, 0, 0]}
+          onSelect={setSelectedObjectInfo}
           size={1.8}
           color="#FFE4B5"
           orbitRadius={95.8}
@@ -482,6 +493,7 @@ const SolarSystem: React.FC = () => {
         {isHeliocentric && (
           <Planet
             position={[192, 0, 0]}
+            onSelect={setSelectedObjectInfo}
             size={1.4}
             color="#87CEEB"
             orbitRadius={192}
@@ -496,6 +508,7 @@ const SolarSystem: React.FC = () => {
         {isHeliocentric && (
           <Planet
             position={[300.5, 0, 0]}
+            onSelect={setSelectedObjectInfo}
             size={1.3}
             color="#1E90FF"
             orbitRadius={300.5}
@@ -510,6 +523,7 @@ const SolarSystem: React.FC = () => {
         {isHeliocentric && (
           <Planet
             position={[394.8, 0, 0]}
+            onSelect={setSelectedObjectInfo}
             size={2}
             color="#8B4513"
             orbitRadius={394.8}
