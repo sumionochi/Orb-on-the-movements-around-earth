@@ -269,14 +269,19 @@ const SolarSystem: React.FC = () => {
         </p>
       </div>
       <Canvas camera={{ position: [0, 800, 800], fov: 45 }}>
-        <ambientLight intensity={0.2} />
-        <pointLight position={[10, 10, 10]} intensity={1.2} color="#FFF5E1" />
-        <pointLight position={[-10, -10, -10]} intensity={0.8} color="#E8F6FF" />
-        <Stars radius={300} depth={80} count={15000} factor={7} saturation={0.8} fade speed={1.2} />
-        <fog attach="fog" args={["#000000", 400, 2000]} />
+        <ambientLight intensity={0.15} />
+        <pointLight position={[10, 10, 10]} intensity={1.0} color="#E6F3FF" />
+        <pointLight position={[-10, -10, -10]} intensity={0.6} color="#F0F8FF" />
+        <Stars radius={400} depth={100} count={25000} factor={8} saturation={0.8} fade speed={1.5} />
+        <fog attach="fog" args={["#000B1E", 500, 2500]} />
+        <Stars radius={300} depth={80} count={20000} factor={7} saturation={0.6} fade speed={1.2} />
+        <Stars radius={200} depth={60} count={15000} factor={6} saturation={0.4} fade speed={0.8} />
+        <fog attach="fog" args={["#000B2E", 400, 2000]} />
+        <Stars radius={150} depth={50} count={10000} factor={5} saturation={0.3} fade speed={0.5} />
+        <fog attach="fog" args={["#000B1E", 400, 2000]} />
         <Stars radius={200} depth={60} count={8000} factor={5} saturation={0.3} fade />
         <Stars radius={200} depth={60} count={10000} factor={6} saturation={0.5} fade speed={1.5} />
-        <fog attach="fog" args={["#080808", 400, 1600]} />
+        <fog attach="fog" args={["#000B2E", 400, 1600]} />
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
         
         {/* Orbit Rings */}
@@ -379,7 +384,7 @@ const SolarSystem: React.FC = () => {
         {/* Sun */}
         <Planet
           position={[0, 0, 0]}
-          size={4}
+          size={2}
           color="#FFD700"
           orbitRadius={isHeliocentric ? 0 : 120}
           orbitSpeed={0.02}
