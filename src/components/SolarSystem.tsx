@@ -211,6 +211,19 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
         opengraphImage: "https://img.youtube.com/vi/MD7Zt2cGXRc/maxresdefault.jpg",
       };
     }
+    if (planetName === "Sun") {
+      return {
+        title: "Sun: The Formation of the Solar System",
+        summary:
+      "- The Sun, a typical G-type main-sequence star of 1 solar mass, formed 4.6 billion years ago from a protoplanetary disk enriched by ancient supernovae.\n" +
+      "- Planets emerged from the accretion of dust and gas into inner rocky worlds and outer gas giants, with countless smaller objects (asteroids, comets, and dwarf planets) remaining.\n" +
+      "- Our solar system resides in the Orion arm of the Milky Way, a tiny fraction of our vast galaxy.\n" +
+      "- Solar structure includes a hot core, radiative and convection zones, and a dynamic outer atmosphere (chromosphere and corona) that drives the solar wind.\n" +
+      "- All heavy elements in our bodies were forged in stars, affirming that we are indeed 'star stuff.'",
+    opengraphLink: "https://youtu.be/gxKCDjnWabk?si=54Ogl0kAOQ0Vjo8c",
+    opengraphImage: "https://t2.gstatic.com/licensed-image?q=tbn:ANd9GcSC-tzajqpca4dchoeTCp8ChzFqdXnSnKtpkbx_5arltgIZQDdV4ALDa2ojaIHmI0GE",
+      };
+    }
     if (isHeliocentric) {
       return {
         title: planetName,
@@ -521,10 +534,10 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
       >
         <h3>{isHeliocentric ? 'Heliocentric Model' : 'Geocentric Model'}</h3>
         <p>
-          {isHeliocentric
-            ? 'The Sun is at the center of the solar system, with all planets including Pluto and the Kuiper Belt.'
-            : 'The Earth is at the center. In geocentric mode, the Sun and outer planets move in retrograde loops leaving behind trails.'}
-          <a
+        {isHeliocentric
+            ? `The Sun is the center of the solar system, simplifying planetary motion by showing retrograde motion as a perspective effect of Earth's orbit. with all planets including Pluto and the Kuiper Belt.`
+            : `Earth is the universes center, with complex epicycles devised to explain the apparent retrograde motions of planets.`}
+            <a
             href="https://youtu.be/ZGr1nHdzLyk?si=GqCkHerRFvZw63QQ"
             target="_blank"
             rel="noopener noreferrer"
@@ -535,8 +548,9 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
               alt="Medieval Retrograde Explanation Video"
               style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
             />
-            <p style={{ color: "yellow", textAlign: 'center', margin: '5px 0 0' }}>
-              History of Astronomy Part 3: Copernicus and Heliocentrism
+            <h5 style={{color:'white'}}>Real world references from Orb</h5>
+            <p style={{ color: "yellow", textAlign: 'center', margin: '0px 0 0' }}>
+              History of Astronomy Part 3: Copernicus and Heliocentrism <br/> (the idea orb challenges : 4:54 min)
             </p>
           </a>
           <a
@@ -589,8 +603,8 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
         {/* Orbit Rings */}
         {!isHeliocentric && (
           <OrbitRing
-            radius={120}
-            color="#FFD700"
+            radius={30}
+            color="pink"
             isVisible
             planetName="Sun"
             heliocentricDistance={{ au: 0, km: "0 km" }}
@@ -632,7 +646,7 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
           />
         )}
         <OrbitRing
-          radius={15.2}
+          radius={40.2}
           color="#FF4500"
           isVisible
           planetName="Mars"
@@ -701,7 +715,7 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
               onSelect={setSelectedObjectInfo}
               size={2}
               color="#FFD700"
-              orbitRadius={120}
+              orbitRadius={30}
               orbitSpeed={0.02}
               isHeliocentric={isHeliocentric}
               name="Sun"
@@ -827,11 +841,11 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
         {!isHeliocentric ? (
           <Trail local width={0.15} length={100} decay={1} attenuation={(t) => t} color="#FF4500">
             <Planet
-              position={[15.2, 0, 0]}
+              position={[35.2, 0, 0]}
               onSelect={setSelectedObjectInfo}
               size={0.5}
               color="#FF4500"
-              orbitRadius={15.2}
+              orbitRadius={40.2}
               orbitSpeed={0.024}
               isHeliocentric={isHeliocentric}
               name="Mars"
@@ -964,6 +978,68 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
         <OrbitControls enablePan enableZoom enableRotate maxDistance={1000} />
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
       </Canvas>
+      <div
+      style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1000,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '1rem',          // space between links
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        padding: '10px 20px',
+        borderRadius: '8px',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      }}
+    >
+      <div style={{display: 'flex', flexDirection: 'row', gap: '1rem'}}>
+      <a
+        href="https://github.com/sumionochi/Orb-on-the-movements-around-earth"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'white', textDecoration: 'none' }}
+      >
+        GitHub
+      </a>
+      <a
+        href="https://www.linkedin.com/in/aaditya-srivastava-connect/"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'white', textDecoration: 'none' }}
+      >
+        LinkedIn
+      </a>
+      <a
+        href="https://www.instagram.com/mito.wins.uncensored/"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'white', textDecoration: 'none' }}
+      >
+        Instagram
+      </a>
+      <a
+        href="https://x.com/sumionochi"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'white', textDecoration: 'none' }}
+      >
+        Twitter
+      </a>
+      </div>
+      <div>
+      <a
+        href="https://youtube.com/YourUsername"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: 'white', textDecoration: 'none' }}
+      >
+        Special Thanks for all the Interesting Knowledge by Professor Dave.
+      </a>
+      </div>
+      </div>
     </div>
   );
 };
