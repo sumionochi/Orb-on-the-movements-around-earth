@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls, Stars, Trail } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface PlanetProps {
@@ -29,6 +29,33 @@ interface OrbitRingProps {
   onSelect?: (info: string | null) => void;
 }
 
+// --- Retrograde Orbit Ring -------------------------------------------------
+// This custom curve builds a retrograde (epicyclic) loop.
+// For the ring we exaggerate the epicycle with amplitudeFactor=0.1 and speedMultiplier=2.
+class RetrogradeCurve extends THREE.Curve<THREE.Vector3> {
+  radius: number;
+  amplitudeFactor: number;
+  speedMultiplier: number;
+  constructor(radius: number, amplitudeFactor = 0.1, speedMultiplier = 2) {
+    super();
+    this.radius = radius;
+    this.amplitudeFactor = amplitudeFactor;
+    this.speedMultiplier = speedMultiplier;
+  }
+  getPoint(t: number): THREE.Vector3 {
+    const angle = t * Math.PI * 2;
+    // Deferent: main circular orbit.
+    const deferentX = Math.cos(angle) * this.radius;
+    const deferentZ = Math.sin(angle) * this.radius;
+    // Epicycle: exaggerated loop.
+    const epicycleRadius = this.radius * this.amplitudeFactor;
+    const epicycleAngle = -this.speedMultiplier * angle;
+    const epiX = Math.cos(epicycleAngle) * epicycleRadius;
+    const epiZ = Math.sin(epicycleAngle) * epicycleRadius;
+    return new THREE.Vector3(deferentX + epiX, 0, deferentZ + epiZ);
+  }
+}
+
 const OrbitRing: React.FC<OrbitRingProps> = ({
   radius,
   color,
@@ -41,7 +68,6 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
-  const meshRef = useRef<THREE.Mesh>(null);
   const [lastClickTime, setLastClickTime] = useState(0);
 
   if (!isVisible) return null;
@@ -55,37 +81,98 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
     return planetName;
   };
 
+  // In geocentric mode, outer bodies (not Earth/Moon) show retrograde motion.
+  const isRetrograde = !isHeliocentric && (planetName !== "Earth" && planetName !== "Moon");
+
+  const retroTubeGeometry = useMemo(() => {
+    if (isRetrograde) {
+      const curve = new RetrogradeCurve(radius, 0.1, 2);
+      // Use a thin tube for the visible ring.
+      const tubeRadius = radius === 394.8 ? 0.2 : 0.05;
+      return new THREE.TubeGeometry(curve, 100, tubeRadius, 8, true);
+    }
+    return null;
+  }, [isRetrograde, radius]);
+
+  const hitboxTubeGeometry = useMemo(() => {
+    if (isRetrograde) {
+      const curve = new RetrogradeCurve(radius, 0.1, 2);
+      return new THREE.TubeGeometry(curve, 100, 0.5, 8, true);
+    }
+    return null;
+  }, [isRetrograde, radius]);
+
   return (
     <group>
-      <mesh
-        ref={meshRef}
-        rotation={[Math.PI / 2, 0, 0]}
-        onPointerOver={() => setIsHovered(true)}
-        onPointerOut={() => setIsHovered(false)}
-        onClick={() => {
-          const now = Date.now();
-          if (now - lastClickTime > 200) {
-            const newSelected = !isSelected;
-            setIsSelected(newSelected);
-            setLastClickTime(now);
-            if (onSelect) {
-              onSelect(newSelected ? getHoverInfo() : null);
-            }
-          }
-        }}
-      >
-        <torusGeometry args={[radius, radius === 394.8 ? 0.2 : 0.05, 32, 100]} />
-        <meshStandardMaterial
-          color={color}
-          opacity={radius === 394.8 ? 1 : 0.8}
-          transparent
-          emissive={color}
-          emissiveIntensity={isHovered ? 2 : (radius === 394.8 ? 1.2 : 0.6)}
-          roughness={0.1}
-          metalness={0.9}
-        />
-      </mesh>
-      {/* Removed the Html overlay so info only shows at fixed left side */}
+      {isRetrograde ? (
+        <>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <primitive object={retroTubeGeometry!} attach="geometry" />
+            <meshStandardMaterial
+              color={color}
+              opacity={1}
+              transparent
+              emissive={color}
+              emissiveIntensity={isHovered ? 2 : 1}
+              roughness={0.1}
+              metalness={0.9}
+            />
+          </mesh>
+          <mesh
+            rotation={[Math.PI / 2, 0, 0]}
+            onPointerOver={() => setIsHovered(true)}
+            onPointerOut={() => setIsHovered(false)}
+            onClick={() => {
+              const now = Date.now();
+              if (now - lastClickTime > 200) {
+                const newSelected = !isSelected;
+                setIsSelected(newSelected);
+                setLastClickTime(now);
+                if (onSelect) {
+                  onSelect(newSelected ? getHoverInfo() : null);
+                }
+              }
+            }}
+          >
+            <primitive object={hitboxTubeGeometry!} attach="geometry" />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+        </>
+      ) : (
+        <>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[radius, radius === 394.8 ? 0.2 : 0.05, 32, 100]} />
+            <meshStandardMaterial
+              color={color}
+              opacity={radius === 394.8 ? 1 : 0.8}
+              transparent
+              emissive={color}
+              emissiveIntensity={isHovered ? 2 : (radius === 394.8 ? 1.2 : 0.6)}
+              roughness={0.1}
+              metalness={0.9}
+            />
+          </mesh>
+          <mesh
+            rotation={[Math.PI / 2, 0, 0]}
+            onPointerOver={() => setIsHovered(true)}
+            onPointerOut={() => setIsHovered(false)}
+            onClick={() => {
+              const now = Date.now();
+              if (now - lastClickTime > 200) {
+                const newSelected = !isSelected;
+                setIsSelected(newSelected);
+                setLastClickTime(now);
+                if (onSelect) {
+                  onSelect(newSelected ? getHoverInfo() : null);
+                }
+              }
+            }}
+          >
+            <torusGeometry args={[radius, 0.5, 32, 100]} />
+            <meshBasicMaterial transparent opacity={0} />
+          </mesh>
+        </>
+      )}
     </group>
   );
 };
@@ -103,7 +190,6 @@ const Planet: React.FC<PlanetProps> = ({
   children,
   onSelect,
 }) => {
-  // Use a group so that orbiting is computed relative to a pivot.
   const groupRef = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
@@ -136,18 +222,30 @@ const Planet: React.FC<PlanetProps> = ({
     if (!groupRef.current || !meshRef.current || !glowRef.current) return;
     const newAngle = angle + orbitSpeed;
     setAngle(newAngle);
+
     if (orbitRadius > 0) {
-      groupRef.current.position.x = Math.cos(newAngle) * orbitRadius;
-      groupRef.current.position.z = Math.sin(newAngle) * orbitRadius;
+      if (isHeliocentric || name === "Earth" || name === "Moon") {
+        groupRef.current.position.x = Math.cos(newAngle) * orbitRadius;
+        groupRef.current.position.z = Math.sin(newAngle) * orbitRadius;
+      } else {
+        const deferentX = Math.cos(newAngle) * orbitRadius;
+        const deferentZ = Math.sin(newAngle) * orbitRadius;
+        const epicycleRadius = orbitRadius * 0.05;
+        const epicycleAngle = -newAngle * 1.5;
+        const epiX = Math.cos(epicycleAngle) * epicycleRadius;
+        const epiZ = Math.sin(epicycleAngle) * epicycleRadius;
+        groupRef.current.position.x = deferentX + epiX;
+        groupRef.current.position.z = deferentZ + epiZ;
+      }
     } else {
       groupRef.current.position.set(...position);
     }
-    // Subtle spin for visual effect
     meshRef.current.rotation.y += 0.005;
     glowRef.current.rotation.y += 0.005;
   });
 
-  return (
+  // In geocentric mode, for retrograde bodies (everything except Earth/Moon) we'll add a trail.
+  const content = (
     <group ref={groupRef} position={orbitRadius > 0 ? [orbitRadius, 0, 0] : position}>
       <mesh ref={meshRef} onClick={handleClick}>
         <sphereGeometry args={[size, 32, 32]} />
@@ -169,15 +267,40 @@ const Planet: React.FC<PlanetProps> = ({
           blending={THREE.AdditiveBlending}
         />
       </mesh>
-      {/* Removed the Html overlay here as well */}
       {children}
     </group>
   );
+
+  // If geocentric mode and this body is not Earth or Moon, wrap with a trail.
+  if (!isHeliocentric && name !== "Earth" && name !== "Moon") {
+    return (
+      <Trail
+        local
+        width={2}
+        length={100}
+        decay={1}
+        attenuation={(t) => t}
+        color={color}
+      >
+        {content}
+      </Trail>
+    );
+  }
+
+  return content;
 };
 
 const SolarSystem: React.FC = () => {
   const [isHeliocentric, setIsHeliocentric] = useState(true);
   const [selectedObjectInfo, setSelectedObjectInfo] = useState<string | null>(null);
+
+  // Prevent scrolling on the main page
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   return (
     <div style={{ height: '100vh', width: '100vw' }}>
@@ -197,7 +320,7 @@ const SolarSystem: React.FC = () => {
             backdropFilter: 'blur(5px)',
             border: '1px solid rgba(255, 255, 255, 0.1)',
             boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            fontSize: '14px'
+            fontSize: '14px',
           }}
         >
           {selectedObjectInfo}
@@ -206,7 +329,6 @@ const SolarSystem: React.FC = () => {
       <button
         onClick={() => {
           setIsHeliocentric(!isHeliocentric);
-          // Clear any selected object info when toggling models
           setSelectedObjectInfo(null);
         }}
         style={{
@@ -219,7 +341,7 @@ const SolarSystem: React.FC = () => {
           color: 'white',
           border: 'none',
           borderRadius: '5px',
-          cursor: 'pointer'
+          cursor: 'pointer',
         }}
       >
         Toggle {isHeliocentric ? 'Geocentric' : 'Heliocentric'}
@@ -234,14 +356,14 @@ const SolarSystem: React.FC = () => {
           backgroundColor: 'rgba(0, 0, 0, 0.7)',
           color: 'white',
           borderRadius: '5px',
-          maxWidth: '300px'
+          maxWidth: '300px',
         }}
       >
         <h3>{isHeliocentric ? 'Heliocentric Model' : 'Geocentric Model'}</h3>
         <p>
           {isHeliocentric
             ? 'The Sun is at the center of the solar system, with all planets including Pluto and the Kuiper Belt.'
-            : 'The Earth is at the center, showing planets up to Saturn as known in ancient times.'}
+            : 'The Earth is at the center. In geocentric mode, the Sun and outer planets move in retrograde loops leaving behind trails.'}
         </p>
       </div>
       <Canvas camera={{ position: [0, 800, 800], fov: 45 }}>
@@ -368,48 +490,99 @@ const SolarSystem: React.FC = () => {
         )}
 
         {/* Sun */}
-        <Planet
-          position={[0, 0, 0]}
-          onSelect={setSelectedObjectInfo}
-          size={2}
-          color="#FFD700"
-          orbitRadius={isHeliocentric ? 0 : 120}
-          orbitSpeed={0.02}
-          isHeliocentric={isHeliocentric}
-          name="Sun"
-          heliocentricDistance={{ au: 0, km: "0 km" }}
-          geocentricDistance={{ earthRadii: 1200, km: "~7,645,200 km" }}
-        />
+        {!isHeliocentric ? (
+          <Trail local width={0.3} length={100} decay={1} attenuation={(t) => t} color="#FFD700">
+            <Planet
+              position={[0, 0, 0]}
+              onSelect={setSelectedObjectInfo}
+              size={2}
+              color="#FFD700"
+              orbitRadius={120}
+              orbitSpeed={0.02}
+              isHeliocentric={isHeliocentric}
+              name="Sun"
+              heliocentricDistance={{ au: 0, km: "0 km" }}
+              geocentricDistance={{ earthRadii: 1200, km: "~7,645,200 km" }}
+            />
+          </Trail>
+        ) : (
+          <Planet
+            position={[0, 0, 0]}
+            onSelect={setSelectedObjectInfo}
+            size={2}
+            color="#FFD700"
+            orbitRadius={0}
+            orbitSpeed={0.02}
+            isHeliocentric={isHeliocentric}
+            name="Sun"
+            heliocentricDistance={{ au: 0, km: "0 km" }}
+            geocentricDistance={{ earthRadii: 1200, km: "~7,645,200 km" }}
+          />
+        )}
 
         {/* Mercury */}
-        <Planet
-          position={[3.9, 0, 0]}
-          onSelect={setSelectedObjectInfo}
-          size={0.4}
-          color="#A0522D"
-          orbitRadius={3.9}
-          orbitSpeed={0.047}
-          isHeliocentric={isHeliocentric}
-          name="Mercury"
-          heliocentricDistance={{ au: 0.39, km: "~57.9 million km" }}
-          geocentricDistance={{ earthRadii: 79, km: "~503,000 km" }}
-        />
+        {!isHeliocentric ? (
+          <Trail local width={0.15} length={100} decay={1} attenuation={(t) => t} color="#A0522D">
+            <Planet
+              position={[3.9, 0, 0]}
+              onSelect={setSelectedObjectInfo}
+              size={0.4}
+              color="#A0522D"
+              orbitRadius={3.9}
+              orbitSpeed={0.047}
+              isHeliocentric={isHeliocentric}
+              name="Mercury"
+              heliocentricDistance={{ au: 0.39, km: "~57.9 million km" }}
+              geocentricDistance={{ earthRadii: 79, km: "~503,000 km" }}
+            />
+          </Trail>
+        ) : (
+          <Planet
+            position={[3.9, 0, 0]}
+            onSelect={setSelectedObjectInfo}
+            size={0.4}
+            color="#A0522D"
+            orbitRadius={3.9}
+            orbitSpeed={0.047}
+            isHeliocentric={isHeliocentric}
+            name="Mercury"
+            heliocentricDistance={{ au: 0.39, km: "~57.9 million km" }}
+            geocentricDistance={{ earthRadii: 79, km: "~503,000 km" }}
+          />
+        )}
 
         {/* Venus */}
-        <Planet
-          position={[7.2, 0, 0]}
-          onSelect={setSelectedObjectInfo}
-          size={0.9}
-          color="#DEB887"
-          orbitRadius={7.2}
-          orbitSpeed={0.035}
-          isHeliocentric={isHeliocentric}
-          name="Venus"
-          heliocentricDistance={{ au: 0.72, km: "~108.2 million km" }}
-          geocentricDistance={{ earthRadii: 120, km: "~764,500 km" }}
-        />
+        {!isHeliocentric ? (
+          <Trail local width={0.15} length={100} decay={1} attenuation={(t) => t} color="#DEB887">
+            <Planet
+              position={[7.2, 0, 0]}
+              onSelect={setSelectedObjectInfo}
+              size={0.9}
+              color="#DEB887"
+              orbitRadius={7.2}
+              orbitSpeed={0.035}
+              isHeliocentric={isHeliocentric}
+              name="Venus"
+              heliocentricDistance={{ au: 0.72, km: "~108.2 million km" }}
+              geocentricDistance={{ earthRadii: 120, km: "~764,500 km" }}
+            />
+          </Trail>
+        ) : (
+          <Planet
+            position={[7.2, 0, 0]}
+            onSelect={setSelectedObjectInfo}
+            size={0.9}
+            color="#DEB887"
+            orbitRadius={7.2}
+            orbitSpeed={0.035}
+            isHeliocentric={isHeliocentric}
+            name="Venus"
+            heliocentricDistance={{ au: 0.72, km: "~108.2 million km" }}
+            geocentricDistance={{ earthRadii: 120, km: "~764,500 km" }}
+          />
+        )}
 
-        {/* Earth with nested Moon */}
+        {/* Earth with nested Moon (Earth remains fixed in geocentric mode) */}
         <Planet
           position={isHeliocentric ? [10, 0, 0] : [0, 0, 0]}
           onSelect={setSelectedObjectInfo}
@@ -422,7 +595,6 @@ const SolarSystem: React.FC = () => {
           heliocentricDistance={{ au: 1.0, km: "~149.6 million km" }}
           geocentricDistance={{ earthRadii: 0, km: "0 km" }}
         >
-          {/* Moon nested inside Earth */}
           <Planet
             position={[0, 0, 0]}
             onSelect={setSelectedObjectInfo}
@@ -448,46 +620,97 @@ const SolarSystem: React.FC = () => {
         </Planet>
 
         {/* Mars */}
-        <Planet
-          position={[15.2, 0, 0]}
-          onSelect={setSelectedObjectInfo}
-          size={0.5}
-          color="#FF4500"
-          orbitRadius={15.2}
-          orbitSpeed={0.024}
-          isHeliocentric={isHeliocentric}
-          name="Mars"
-          heliocentricDistance={{ au: 1.52, km: "~227.9 million km" }}
-          geocentricDistance={{ earthRadii: 1800, km: "~11,468,000 km" }}
-        />
+        {!isHeliocentric ? (
+          <Trail local width={0.15} length={100} decay={1} attenuation={(t) => t} color="#FF4500">
+            <Planet
+              position={[15.2, 0, 0]}
+              onSelect={setSelectedObjectInfo}
+              size={0.5}
+              color="#FF4500"
+              orbitRadius={15.2}
+              orbitSpeed={0.024}
+              isHeliocentric={isHeliocentric}
+              name="Mars"
+              heliocentricDistance={{ au: 1.52, km: "~227.9 million km" }}
+              geocentricDistance={{ earthRadii: 1800, km: "~11,468,000 km" }}
+            />
+          </Trail>
+        ) : (
+          <Planet
+            position={[15.2, 0, 0]}
+            onSelect={setSelectedObjectInfo}
+            size={0.5}
+            color="#FF4500"
+            orbitRadius={15.2}
+            orbitSpeed={0.024}
+            isHeliocentric={isHeliocentric}
+            name="Mars"
+            heliocentricDistance={{ au: 1.52, km: "~227.9 million km" }}
+            geocentricDistance={{ earthRadii: 1800, km: "~11,468,000 km" }}
+          />
+        )}
 
         {/* Jupiter */}
-        <Planet
-          position={[52, 0, 0]}
-          onSelect={setSelectedObjectInfo}
-          size={2}
-          color="#DEB887"
-          orbitRadius={52}
-          orbitSpeed={0.013}
-          isHeliocentric={isHeliocentric}
-          name="Jupiter"
-          heliocentricDistance={{ au: 5.20, km: "~778.6 million km" }}
-          geocentricDistance={{ earthRadii: 2400, km: "~15,290,000 km" }}
-        />
+        {!isHeliocentric ? (
+          <Trail local width={2} length={100} decay={1} attenuation={(t) => t} color="#DEB887">
+            <Planet
+              position={[52, 0, 0]}
+              onSelect={setSelectedObjectInfo}
+              size={2}
+              color="#DEB887"
+              orbitRadius={52}
+              orbitSpeed={0.013}
+              isHeliocentric={isHeliocentric}
+              name="Jupiter"
+              heliocentricDistance={{ au: 5.20, km: "~778.6 million km" }}
+              geocentricDistance={{ earthRadii: 2400, km: "~15,290,000 km" }}
+            />
+          </Trail>
+        ) : (
+          <Planet
+            position={[52, 0, 0]}
+            onSelect={setSelectedObjectInfo}
+            size={2}
+            color="#DEB887"
+            orbitRadius={52}
+            orbitSpeed={0.013}
+            isHeliocentric={isHeliocentric}
+            name="Jupiter"
+            heliocentricDistance={{ au: 5.20, km: "~778.6 million km" }}
+            geocentricDistance={{ earthRadii: 2400, km: "~15,290,000 km" }}
+          />
+        )}
 
         {/* Saturn */}
-        <Planet
-          position={[95.8, 0, 0]}
-          onSelect={setSelectedObjectInfo}
-          size={1.8}
-          color="#FFE4B5"
-          orbitRadius={95.8}
-          orbitSpeed={0.009}
-          isHeliocentric={isHeliocentric}
-          name="Saturn"
-          heliocentricDistance={{ au: 9.58, km: "~1.433 billion km" }}
-          geocentricDistance={{ earthRadii: 3600, km: "~22,935,600 km" }}
-        />
+        {!isHeliocentric ? (
+          <Trail local width={2} length={100} decay={1} attenuation={(t) => t} color="#FFE4B5">
+            <Planet
+              position={[95.8, 0, 0]}
+              onSelect={setSelectedObjectInfo}
+              size={1.8}
+              color="#FFE4B5"
+              orbitRadius={95.8}
+              orbitSpeed={0.009}
+              isHeliocentric={isHeliocentric}
+              name="Saturn"
+              heliocentricDistance={{ au: 9.58, km: "~1.433 billion km" }}
+              geocentricDistance={{ earthRadii: 3600, km: "~22,935,600 km" }}
+            />
+          </Trail>
+        ) : (
+          <Planet
+            position={[95.8, 0, 0]}
+            onSelect={setSelectedObjectInfo}
+            size={1.8}
+            color="#FFE4B5"
+            orbitRadius={95.8}
+            orbitSpeed={0.009}
+            isHeliocentric={isHeliocentric}
+            name="Saturn"
+            heliocentricDistance={{ au: 9.58, km: "~1.433 billion km" }}
+            geocentricDistance={{ earthRadii: 3600, km: "~22,935,600 km" }}
+          />
+        )}
 
         {/* Uranus - Only in Heliocentric */}
         {isHeliocentric && (
@@ -535,6 +758,7 @@ const SolarSystem: React.FC = () => {
         )}
 
         <OrbitControls enablePan enableZoom enableRotate maxDistance={1000} />
+        <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
       </Canvas>
     </div>
   );
