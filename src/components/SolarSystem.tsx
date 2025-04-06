@@ -26,44 +26,64 @@ const OrbitRing: React.FC<OrbitRingProps> = ({ radius, color, isVisible }) => {
   
   return (
     <mesh rotation={[Math.PI / 2, 0, 0]}>
-      <torusGeometry args={[radius, 0.02, 16, 100]} />
-      <meshBasicMaterial color={color} opacity={0.3} transparent={true} />
+      <torusGeometry args={[radius, 0.05, 32, 100]} />
+      <meshBasicMaterial
+        color={color}
+        opacity={0.4}
+        transparent={true}
+      />
     </mesh>
   );
 };
 
 const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orbitSpeed, isHeliocentric, name, heliocentricDistance, geocentricDistance }) => {
   const meshRef = useRef<THREE.Mesh>(null);
+  const glowRef = useRef<THREE.Mesh>(null);
   const [angle, setAngle] = useState(0);
   const [hovered, setHovered] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState(false);
 
   useFrame(() => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !glowRef.current) return;
     
     const newAngle = angle + orbitSpeed;
     setAngle(newAngle);
 
+    // Update planet position
     if (isHeliocentric) {
       if (color === '#FFD700') {
         meshRef.current.position.x = 0;
         meshRef.current.position.z = 0;
+        glowRef.current.position.x = 0;
+        glowRef.current.position.z = 0;
       } else {
         meshRef.current.position.x = Math.cos(angle) * orbitRadius;
         meshRef.current.position.z = Math.sin(angle) * orbitRadius;
+        glowRef.current.position.x = meshRef.current.position.x;
+        glowRef.current.position.z = meshRef.current.position.z;
       }
     } else {
       if (color === '#4169E1') {
         meshRef.current.position.x = 0;
         meshRef.current.position.z = 0;
+        glowRef.current.position.x = 0;
+        glowRef.current.position.z = 0;
       } else if (color === '#FFD700') {
         meshRef.current.position.x = Math.cos(angle) * orbitRadius;
         meshRef.current.position.z = Math.sin(angle) * orbitRadius;
+        glowRef.current.position.x = meshRef.current.position.x;
+        glowRef.current.position.z = meshRef.current.position.z;
       } else {
         meshRef.current.position.x = Math.cos(angle) * orbitRadius;
         meshRef.current.position.z = Math.sin(angle) * orbitRadius;
+        glowRef.current.position.x = meshRef.current.position.x;
+        glowRef.current.position.z = meshRef.current.position.z;
       }
     }
+
+    // Gentle rotation animation
+    meshRef.current.rotation.y += 0.005;
+    glowRef.current.rotation.y += 0.005;
   });
 
   const getHoverInfo = () => {
@@ -93,7 +113,22 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
         onPointerOut={() => setHovered(false)}
       >
         <sphereGeometry args={[size, 32, 32]} />
-        <meshStandardMaterial color={color} />
+        <meshStandardMaterial
+          color={color}
+          roughness={0.3}
+          metalness={0.2}
+          emissive={color}
+          emissiveIntensity={0.2}
+        />
+      </mesh>
+      <mesh ref={glowRef} position={position} scale={[1.2, 1.2, 1.2]}>
+        <sphereGeometry args={[size, 32, 32]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.15}
+          side={THREE.BackSide}
+        />
       </mesh>
       <Html position={[position[0], position[1] + size + 1, position[2]]}>
         <div
@@ -160,8 +195,11 @@ const SolarSystem: React.FC = () => {
         </p>
       </div>
       <Canvas camera={{ position: [0, 30, 30], fov: 60 }}>
-        <ambientLight intensity={0.5} />
-        <pointLight position={[10, 10, 10]} intensity={1} />
+        <ambientLight intensity={0.3} />
+        <pointLight position={[10, 10, 10]} intensity={0.8} color="#FFF5E1" />
+        <pointLight position={[-10, -10, -10]} intensity={0.5} color="#E8F6FF" />
+        <Stars radius={200} depth={60} count={10000} factor={6} saturation={0.5} fade speed={1.5} />
+        <fog attach="fog" args={["#080808", 100, 400]} />
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
         
         {/* Orbit Rings */}
