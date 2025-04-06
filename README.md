@@ -1,4 +1,4 @@
-# Solar System Visualization : A Tribute to Orb : On the movement around earth Anime & Mange
+# # Solar System Visualization Between **Heliocentric** and **Geocentric** : A Tribute to Orb On the movement around earth Anime & Mange
 
 A React + TypeScript + Three.js project to visualize both **Heliocentric** (Sun-centered) and **Geocentric** (Earth-centered) models of the Solar System.  
 In geocentric mode, each outer planet exhibits **retrograde** (epicyclic) motion and leaves behind a trail.  
