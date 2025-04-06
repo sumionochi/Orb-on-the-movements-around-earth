@@ -579,7 +579,7 @@ const SolarSystem: React.FC = () => {
   onClick={() => setSelectedObjectInfo(null)}
   style={{
             position: 'absolute',
-            bottom: '-3rem',
+            top: '-0.5rem',
             left: '-1rem',
             cursor: 'pointer',
             background: 'none',
