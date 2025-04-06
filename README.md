@@ -1,8 +1,10 @@
-# # Solar System Visualization Between **Heliocentric** and **Geocentric** : A Tribute to Orb On the movement around earth Anime & Mange
+# Solar System Visualization Between **Heliocentric** and **Geocentric** : A Tribute to Orb On the movement around earth Anime & Mange
 
 A React + TypeScript + Three.js project to visualize both **Heliocentric** (Sun-centered) and **Geocentric** (Earth-centered) models of the Solar System.  
 In geocentric mode, each outer planet exhibits **retrograde** (epicyclic) motion and leaves behind a trail.  
 Hover/click on orbit rings to display info about each planet in a side panel.  
+
+<img width="1181" alt="image" src="https://github.com/user-attachments/assets/510fcec7-9c4a-48d3-942c-754d29f60d82" />
 
 ## Features
 
@@ -137,3 +139,7 @@ public/
 ## Contributing
 
 Feel free to submit a pull request or open an issue to discuss improvements, bug fixes, or new features. All contributions are welcome!
+
+<img width="1201" alt="image" src="https://github.com/user-attachments/assets/8996c49e-0017-47b4-9162-9455d7d3728f" />
+
+a wrong answer is not a meaningless one ~ Protagonist

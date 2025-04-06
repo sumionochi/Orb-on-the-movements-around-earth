@@ -4,6 +4,7 @@ import { OrbitControls, Stars, Trail } from '@react-three/drei';
 import * as THREE from 'three';
 import CameraTransition from './CameraTransition';
 
+// ---------- Types and Interfaces ----------
 interface InfoData {
   title: string;
   summary: string;
@@ -12,7 +13,7 @@ interface InfoData {
 }
 
 interface PlanetProps {
-  position: [number, number, number]; // For fixed (non-orbiting) bodies
+  position: [number, number, number];
   size: number;
   color: string;
   orbitRadius: number;
@@ -22,7 +23,7 @@ interface PlanetProps {
   heliocentricDistance: { au: number; km: string };
   geocentricDistance?: { earthRadii: number; km: string };
   children?: React.ReactNode;
-  onSelect?: (info: InfoData | null) => void; // Updated type
+  onSelect?: (info: InfoData | null) => void;
 }
 
 interface OrbitRingProps {
@@ -34,12 +35,10 @@ interface OrbitRingProps {
   heliocentricDistance: { au: number; km: string };
   geocentricDistance?: { earthRadii: number; km: string };
   isHeliocentric: boolean;
-  onSelect?: (info: InfoData | null) => void; // Updated type
+  onSelect?: (info: InfoData | null) => void;
 }
 
-// --- Retrograde Orbit Ring -------------------------------------------------
-// This custom curve builds a retrograde (epicyclic) loop.
-// For the ring we exaggerate the epicycle with amplitudeFactor=0.1 and speedMultiplier=2.
+// ---------- Retrograde Orbit Curve ----------
 class RetrogradeCurve extends THREE.Curve<THREE.Vector3> {
   radius: number;
   amplitudeFactor: number;
@@ -52,10 +51,8 @@ class RetrogradeCurve extends THREE.Curve<THREE.Vector3> {
   }
   getPoint(t: number): THREE.Vector3 {
     const angle = t * Math.PI * 2;
-    // Deferent: main circular orbit.
     const deferentX = Math.cos(angle) * this.radius;
     const deferentZ = Math.sin(angle) * this.radius;
-    // Epicycle: exaggerated loop.
     const epicycleRadius = this.radius * this.amplitudeFactor;
     const epicycleAngle = -this.speedMultiplier * angle;
     const epiX = Math.cos(epicycleAngle) * epicycleRadius;
@@ -64,6 +61,7 @@ class RetrogradeCurve extends THREE.Curve<THREE.Vector3> {
   }
 }
 
+// ---------- OrbitRing Component ----------
 const OrbitRing: React.FC<OrbitRingProps> = ({
   radius,
   color,
@@ -80,12 +78,12 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
   if (!isVisible) return null;
 
   const getHoverInfo = (): InfoData => {
-    // Custom info for Mercury:
+    // ---------- Custom Info for each planet ----------
     if (planetName === "Mercury") {
       return {
         title: "Mercury: The Extreme Innermost Planet",
         summary:
-        `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
           "- Mercury is the smallest and innermost planet in the solar system.\n" +
           "- It experiences extreme temperature variations: scorching up to 700 K in sunlight and plunging to 100 K in darkness due to its lack of atmosphere.\n" +
           "- It orbits the Sun rapidly with a unique spin–orbit resonance (three rotations every two Mercury years), resulting in a solar day of 176 Earth days.\n" +
@@ -100,7 +98,7 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
       return {
         title: "Venus: The Hostile Sister Planet",
         summary:
-        `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
+          `- Distance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})\n` +
           "- Venus is the second planet from the Sun, with an average orbital radius of 108 million kilometers and remarkably similar in size to Earth.\n" +
           "- Its dense atmosphere consists of 96% carbon dioxide, creating surface pressures 100 times greater than Earth's and trapping extreme heat.\n" +
           "- Surface temperatures reach around 735 K, making it the hottest planet, while thick sulfuric acid clouds obscure its terrain.\n" +
@@ -125,7 +123,7 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
         opengraphLink: "https://youtu.be/Ll_2i_PmP6M?si=mSBkqRLb_yLgsgIY",
         opengraphImage: "https://img.youtube.com/vi/Ll_2i_PmP6M/maxresdefault.jpg",
       };
-    }    
+    }
     if (planetName === "Mars") {
       return {
         title: "Mars: The Red Planet of Contrasts",
@@ -215,15 +213,17 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
       return {
         title: "Sun: The Formation of the Solar System",
         summary:
-      "- The Sun, a typical G-type main-sequence star of 1 solar mass, formed 4.6 billion years ago from a protoplanetary disk enriched by ancient supernovae.\n" +
-      "- Planets emerged from the accretion of dust and gas into inner rocky worlds and outer gas giants, with countless smaller objects (asteroids, comets, and dwarf planets) remaining.\n" +
-      "- Our solar system resides in the Orion arm of the Milky Way, a tiny fraction of our vast galaxy.\n" +
-      "- Solar structure includes a hot core, radiative and convection zones, and a dynamic outer atmosphere (chromosphere and corona) that drives the solar wind.\n" +
-      "- All heavy elements in our bodies were forged in stars, affirming that we are indeed 'star stuff.'",
-    opengraphLink: "https://youtu.be/gxKCDjnWabk?si=54Ogl0kAOQ0Vjo8c",
-    opengraphImage: "https://t2.gstatic.com/licensed-image?q=tbn:ANd9GcSC-tzajqpca4dchoeTCp8ChzFqdXnSnKtpkbx_5arltgIZQDdV4ALDa2ojaIHmI0GE",
+          "- The Sun, a typical G-type main-sequence star of 1 solar mass, formed 4.6 billion years ago from a protoplanetary disk enriched by ancient supernovae.\n" +
+          "- Planets emerged from the accretion of dust and gas into inner rocky worlds and outer gas giants, with countless smaller objects (asteroids, comets, and dwarf planets) remaining.\n" +
+          "- Our solar system resides in the Orion arm of the Milky Way, a tiny fraction of our vast galaxy.\n" +
+          "- Solar structure includes a hot core, radiative and convection zones, and a dynamic outer atmosphere (chromosphere and corona) that drives the solar wind.\n" +
+          "- All heavy elements in our bodies were forged in stars, affirming that we are indeed 'star stuff.'",
+        opengraphLink: "https://youtu.be/gxKCDjnWabk?si=54Ogl0kAOQ0Vjo8c",
+        opengraphImage: "https://t2.gstatic.com/licensed-image?q=tbn:ANd9GcSC-tzajqpca4dchoeTCp8ChzFqdXnSnKtpkbx_5arltgIZQDdV4ALDa2ojaIHmI0GE",
       };
     }
+
+    // Fallback if no custom data
     if (isHeliocentric) {
       return {
         title: planetName,
@@ -242,13 +242,12 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
     return { title: planetName, summary: planetName, opengraphLink: "", opengraphImage: "" };
   };
 
-  // In geocentric mode, outer bodies (not Earth/Moon) show retrograde motion.
+  // For geocentric mode, show retrograde ring if not Earth/Moon
   const isRetrograde = !isHeliocentric && (planetName !== "Earth" && planetName !== "Moon");
 
   const retroTubeGeometry = useMemo(() => {
     if (isRetrograde) {
       const curve = new RetrogradeCurve(radius, 0.1, 2);
-      // Use a thin tube for the visible ring.
       const tubeRadius = radius === 394.8 ? 0.2 : 0.05;
       return new THREE.TubeGeometry(curve, 100, tubeRadius, 8, true);
     }
@@ -268,7 +267,7 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
       {isRetrograde ? (
         <>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <primitive object={retroTubeGeometry!} attach="geometry" />
+            {retroTubeGeometry && <primitive object={retroTubeGeometry} attach="geometry" />}
             <meshStandardMaterial
               color={color}
               opacity={1}
@@ -295,14 +294,16 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
               }
             }}
           >
-            <primitive object={hitboxTubeGeometry!} attach="geometry" />
+            {hitboxTubeGeometry && <primitive object={hitboxTubeGeometry} attach="geometry" />}
             <meshBasicMaterial transparent opacity={0} />
           </mesh>
         </>
       ) : (
         <>
           <mesh rotation={[Math.PI / 2, 0, 0]}>
-            <torusGeometry args={[radius, radius === 394.8 ? 0.2 : 0.05, 32, 100]} />
+            <torusGeometry
+              args={[radius, radius === 394.8 ? 0.2 : 0.05, 32, 100]}
+            />
             <meshStandardMaterial
               color={color}
               opacity={radius === 394.8 ? 1 : 0.8}
@@ -338,6 +339,7 @@ const OrbitRing: React.FC<OrbitRingProps> = ({
   );
 };
 
+// ---------- Planet Component ----------
 const Planet: React.FC<PlanetProps> = ({
   position,
   size,
@@ -357,11 +359,14 @@ const Planet: React.FC<PlanetProps> = ({
     if (!groupRef.current || !meshRef.current || !glowRef.current) return;
     const newAngle = angle + orbitSpeed;
     setAngle(newAngle);
+
+    // Update position based on heliocentric or geocentric
     if (orbitRadius > 0) {
       if (isHeliocentric || name === "Earth" || name === "Moon") {
         groupRef.current.position.x = Math.cos(newAngle) * orbitRadius;
         groupRef.current.position.z = Math.sin(newAngle) * orbitRadius;
       } else {
+        // Epicycle for retrograde in geocentric
         const deferentX = Math.cos(newAngle) * orbitRadius;
         const deferentZ = Math.sin(newAngle) * orbitRadius;
         const epicycleRadius = orbitRadius * 0.05;
@@ -374,6 +379,8 @@ const Planet: React.FC<PlanetProps> = ({
     } else {
       groupRef.current.position.set(...position);
     }
+
+    // Subtle rotation
     meshRef.current.rotation.y += 0.005;
     glowRef.current.rotation.y += 0.005;
   });
@@ -404,6 +411,7 @@ const Planet: React.FC<PlanetProps> = ({
     </group>
   );
 
+  // If geocentric and not Earth/Moon => add a trail
   if (!isHeliocentric && name !== "Earth" && name !== "Moon") {
     return (
       <Trail local width={2} length={100} decay={1} attenuation={(t) => t} color={color}>
@@ -414,27 +422,125 @@ const Planet: React.FC<PlanetProps> = ({
   return content;
 };
 
+// ---------- Donation Popup for "10%" ----------
+function PotoskiPopup() {
+  const [show, setShow] = useState(false);
+  const [inputVal, setInputVal] = useState("");
+
+  useEffect(() => {
+    // If localStorage doesn't have potoskiDonation key, show popup
+    if (!localStorage.getItem("potoskiDonation")) {
+      setShow(true);
+    }
+  }, []);
+
+  const handleClose = () => {
+    // user closes => does not store localStorage
+    setShow(false);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Must type "10" to confirm
+    if (inputVal.trim() === "10") {
+      localStorage.setItem("potoskiDonation", "true");
+      setShow(false);
+    } else {
+      alert('Please enter "10" in place of 10% to proceed.');
+    }
+  };
+
+  if (!show) return null;
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 2000,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <div
+        style={{
+          background: '#222',
+          color: '#fff',
+          padding: '20px',
+          borderRadius: '8px',
+          maxWidth: '400px',
+          width: '100%',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+          position: 'relative',
+        }}
+      >
+        <button
+          onClick={handleClose}
+          style={{
+            position: 'absolute',
+            top: '5px',
+            right: '5px',
+            background: 'transparent',
+            color: '#fff',
+            border: 'none',
+            fontSize: '16px',
+            cursor: 'pointer',
+          }}
+        >
+          X
+        </button>
+        <h2 style={{ marginTop: '0' }}>Hello and Thank You for Visiting!</h2>
+        <p style={{ lineHeight: '1.4' }}>
+          Enter <strong>10</strong> to confirm that
+          &ldquo;10%&rdquo; of your interest goes to Potoski.
+        </p>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '8px', marginTop: '15px' }}>
+          <input
+            type="text"
+            value={inputVal}
+            onChange={(e) => setInputVal(e.target.value)}
+            placeholder="Type 10 here..."
+            style={{ flex: 1, padding: '6px' }}
+          />
+          <button type="submit" style={{ padding: '6px 10px', cursor: 'pointer' }}>
+            Confirm
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// ---------- Main SolarSystem Component ----------
 const SolarSystem: React.FC = () => {
   const [isHeliocentric, setIsHeliocentric] = useState(true);
   const [selectedObjectInfo, setSelectedObjectInfo] = useState<InfoData | null>(null);
-// This will flip each time user toggles, forcing a new camera animation
-const [animTrigger, setAnimTrigger] = useState(false)
 
-// Example camera positions:
-const heliocentricPos = useMemo(() => new THREE.Vector3(0, 500, 500), [])
-const geocentricPos = useMemo(() => new THREE.Vector3(0, 400, 400), [])
+  // Flip each time user toggles => triggers camera animation
+  const [animTrigger, setAnimTrigger] = useState(false);
 
-// Decide final camera pos based on isHeliocentric
-const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
+  // Example camera positions
+  const heliocentricPos = useMemo(() => new THREE.Vector3(0, 500, 500), []);
+  const geocentricPos = useMemo(() => new THREE.Vector3(0, 400, 400), []);
 
-  // Prevent scrolling on the main page
+  // Final camera pos based on mode
+  const targetPos = isHeliocentric ? heliocentricPos : geocentricPos;
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = 'auto'; };
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
   }, []);
 
   return (
     <div style={{ height: '100vh', width: '100vw' }}>
+      {/* Donation popup for "10%" check */}
+      <PotoskiPopup />
+
+      {/* Info card if planet orbit ring was clicked */}
       {selectedObjectInfo && (
         <div
           style={{
@@ -459,7 +565,6 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
             textAlign: 'left',
           }}
         >
-          {/* Content container for scrolling */}
           <div style={{ overflowY: 'scroll', maxHeight: '48rem' }}>
             <h2 style={{ margin: '0 0 5px', color: 'yellow' }}>
               {selectedObjectInfo.title.split(' ')[0]}
@@ -496,11 +601,12 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
           </div>
         </div>
       )}
+
+      {/* Toggle Button for Helio/Geo */}
       <button
         onClick={() => {
           setIsHeliocentric(!isHeliocentric);
-          // Flip our animTrigger so camera resets
-          setAnimTrigger((prev) => !prev)
+          setAnimTrigger((prev) => !prev); // flips camera anim
           setSelectedObjectInfo(null);
         }}
         style={{
@@ -515,10 +621,12 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
           borderRadius: '5px',
           cursor: 'pointer',
           opacity: 0.8,
-        }}        
+        }}
       >
         Toggle {isHeliocentric ? 'to Geocentric' : 'to Heliocentric'}
       </button>
+
+      {/* Info top-right */}
       <div
         style={{
           position: 'absolute',
@@ -534,23 +642,31 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
       >
         <h3>{isHeliocentric ? 'Heliocentric Model' : 'Geocentric Model'}</h3>
         <p>
-        {isHeliocentric
-            ? `The Sun is the center of the solar system, simplifying planetary motion by showing retrograde motion as a perspective effect of Earth's orbit. with all planets including Pluto and the Kuiper Belt.`
-            : `Earth is the universes center, with complex epicycles devised to explain the apparent retrograde motions of planets.`}
-            <a
+          {isHeliocentric
+            ? `The Sun is the center of the solar system, simplifying planetary motion by showing retrograde motion as a perspective effect from Earth. This includes all planets: Mercury through Neptune and even Pluto.`
+            : `Earth is the center of the universe, with complex epicycles devised to explain the apparent retrograde motions of planets.`}
+          <a
             href="https://youtu.be/ZGr1nHdzLyk?si=GqCkHerRFvZw63QQ"
             target="_blank"
             rel="noopener noreferrer"
-            style={{ display: 'block', cursor: 'pointer', marginTop: '10px', border: '1px solid #4CAF50', borderRadius: '5px', padding: '5px'  }}
+            style={{
+              display: 'block',
+              cursor: 'pointer',
+              marginTop: '10px',
+              border: '1px solid #4CAF50',
+              borderRadius: '5px',
+              padding: '5px',
+            }}
           >
             <img
               src="https://img.youtube.com/vi/ZGr1nHdzLyk/maxresdefault.jpg"
               alt="Medieval Retrograde Explanation Video"
               style={{ width: '100%', maxWidth: '300px', cursor: 'pointer' }}
             />
-            <h5 style={{color:'white'}}>Real world references from Orb</h5>
-            <p style={{ color: "yellow", textAlign: 'center', margin: '0px 0 0' }}>
-              History of Astronomy Part 3: Copernicus and Heliocentrism <br/> (the idea orb challenges : 4:54 min)
+            <h5 style={{ color: 'white' }}>Real world references from Orb</h5>
+            <p style={{ color: 'yellow', textAlign: 'center', margin: '0px 0 0' }}>
+              History of Astronomy Part 3: Copernicus and Heliocentrism <br />
+              (the idea orb challenges : 4:54 min)
             </p>
           </a>
           <a
@@ -562,32 +678,67 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
               marginTop: '10px',
               border: '1px solid #4CAF50',
               borderRadius: '5px',
-              padding: '5px'
+              padding: '5px',
             }}
           >
             <img
               src="https://i.ytimg.com/vi/i8U9ZjRXClI/hqdefault.jpg?sqp=-oaymwEXCNACELwBSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLAn5cDUQC58G8iff1vXE-EOLQxTew"
               alt="Astronomy/Astrophysics"
-              style={{ width: '100%', maxWidth: '300px', height: '50px', objectFit: 'cover' , cursor: 'pointer' }}
+              style={{
+                width: '100%',
+                maxWidth: '300px',
+                height: '50px',
+                objectFit: 'cover',
+                cursor: 'pointer',
+              }}
             />
-            <p style={{ color: "yellow", textAlign: 'center', margin: '5px 0 0' }}>
+            <p style={{ color: 'yellow', textAlign: 'center', margin: '5px 0 0' }}>
               <span style={{ color: 'white' }}>(Playlist)</span> Professor Dave Explains : Astronomy/Astrophysics
             </p>
           </a>
         </p>
       </div>
-      <div style={{position:'absolute', top:'20', left:'50%', transform:'translateX(-50%)', display:'flex', flexDirection: 'column', gap:'0px'}}>
-        <h2 className="glowText">Orb: On the movement around earth</h2>
+
+      {/* Additional small headings */}
+      <div
+        style={{
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0px',
+          textAlign: 'center',
+        }}
+      >
+        <h2 className="glowText">Orb: On the movement around earth tribute</h2>
       </div>
-      <h4 style={{position:'absolute', top:'40px', left:'50%', transform:'translateX(-50%)', display:'flex', flexDirection: 'column', gap:'0px'}}>click on orbital paths to know more ...</h4>
+      <h4
+        style={{
+          position: 'absolute',
+          top: '40px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0px',
+          marginTop: '40px',
+        }}
+      >
+        click on orbital paths to know more ...
+      </h4>
+
+      {/* Main Canvas */}
       <Canvas camera={{ position: [0, 200, 500], fov: 45 }}>
-      <CameraTransition 
-          targetPos={targetPos}
-          triggerAnimation={animTrigger}
-        />
+        {/* Camera animation helper */}
+        <CameraTransition targetPos={targetPos} triggerAnimation={animTrigger} />
+
         <ambientLight intensity={0.15} />
         <pointLight position={[10, 10, 10]} intensity={1.0} color="#E6F3FF" />
         <pointLight position={[-10, -10, -10]} intensity={0.6} color="#F0F8FF" />
+
+        {/* Various star fields / fog */}
         <Stars radius={400} depth={100} count={25000} factor={8} saturation={0.8} fade speed={1.5} />
         <fog attach="fog" args={['#000B1E', 500, 2500]} />
         <Stars radius={300} depth={80} count={20000} factor={7} saturation={0.6} fade speed={1.2} />
@@ -800,7 +951,7 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
           />
         )}
 
-        {/* Earth with nested Moon */}
+        {/* Earth & Moon */}
         <Planet
           position={isHeliocentric ? [10, 0, 0] : [0, 0, 0]}
           onSelect={setSelectedObjectInfo}
@@ -978,67 +1129,77 @@ const targetPos = isHeliocentric ? heliocentricPos : geocentricPos
         <OrbitControls enablePan enableZoom enableRotate maxDistance={1000} />
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
       </Canvas>
+
+      {/* Footer with social links */}
       <div
-      style={{
-        position: 'fixed',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 1000,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '1rem',          // space between links
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        padding: '10px 20px',
-        borderRadius: '8px',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-      }}
-    >
-      <div style={{display: 'flex', flexDirection: 'row', gap: '1rem'}}>
-      <a
-        href="https://github.com/sumionochi/Orb-on-the-movements-around-earth"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: 'white', textDecoration: 'none' }}
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          padding: '10px 20px',
+          borderRadius: '8px',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+        }}
       >
-        GitHub
-      </a>
-      <a
-        href="https://www.linkedin.com/in/aaditya-srivastava-connect/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: 'white', textDecoration: 'none' }}
-      >
-        LinkedIn
-      </a>
-      <a
-        href="https://www.instagram.com/mito.wins.uncensored/"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: 'white', textDecoration: 'none' }}
-      >
-        Instagram
-      </a>
-      <a
-        href="https://x.com/sumionochi"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: 'white', textDecoration: 'none' }}
-      >
-        Twitter
-      </a>
-      </div>
-      <div>
-      <a
-        href="https://youtube.com/YourUsername"
-        target="_blank"
-        rel="noopener noreferrer"
-        style={{ color: 'white', textDecoration: 'none' }}
-      >
-        Special Thanks for all the Interesting Knowledge by Professor Dave.
-      </a>
-      </div>
+        <div style={{ display: 'flex', flexDirection: 'row', gap: '1rem' }}>
+          <a
+            href="https://github.com/sumionochi/Orb-on-the-movements-around-earth"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'white', textDecoration: 'none' }}
+          >
+            GitHub
+          </a>
+          <a
+            href="https://www.linkedin.com/in/aaditya-srivastava-connect/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'white', textDecoration: 'none' }}
+          >
+            LinkedIn
+          </a>
+          <a
+            href="https://www.instagram.com/mito.wins.uncensored/"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'white', textDecoration: 'none' }}
+          >
+            Instagram
+          </a>
+          <a
+            href="https://x.com/sumionochi"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'white', textDecoration: 'none' }}
+          >
+            Twitter
+          </a>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'center' }}>
+          <a
+            href="https://www.youtube.com/@ProfessorDaveExplains"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'white', textDecoration: 'none' }}
+          >
+            Special Thanks for all the Interesting Knowledge by Professor Dave
+          </a>
+          <a
+            href="https://myanimelist.net/anime/52215/Chi_Chikyuu_no_Undou_ni_Tsuite"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: 'white', textDecoration: 'none' }}
+          >
+            Orb : MyAnimeList
+          </a>
+        </div>
       </div>
     </div>
   );
