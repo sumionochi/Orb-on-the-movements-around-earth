@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Stars } from '@react-three/drei';
+import { OrbitControls, Stars, Html } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface PlanetProps {
@@ -10,11 +10,32 @@ interface PlanetProps {
   orbitRadius: number;
   orbitSpeed: number;
   isHeliocentric: boolean;
+  name: string;
+  heliocentricDistance: { au: number; km: string };
+  geocentricDistance?: { earthRadii: number; km: string };
 }
 
-const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orbitSpeed, isHeliocentric }) => {
+interface OrbitRingProps {
+  radius: number;
+  color: string;
+  isVisible: boolean;
+}
+
+const OrbitRing: React.FC<OrbitRingProps> = ({ radius, color, isVisible }) => {
+  if (!isVisible) return null;
+  
+  return (
+    <mesh rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[radius, 0.02, 16, 100]} />
+      <meshBasicMaterial color={color} opacity={0.3} transparent={true} />
+    </mesh>
+  );
+};
+
+const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orbitSpeed, isHeliocentric, name, heliocentricDistance, geocentricDistance }) => {
   const meshRef = useRef<THREE.Mesh>(null);
   const [angle, setAngle] = useState(0);
+  const [hovered, setHovered] = useState(false);
 
   useFrame(() => {
     if (!meshRef.current) return;
@@ -47,11 +68,42 @@ const Planet: React.FC<PlanetProps> = ({ position, size, color, orbitRadius, orb
     }
   });
 
+  const getHoverInfo = () => {
+    if (isHeliocentric) {
+      return `${name}\nDistance from Sun: ${heliocentricDistance.au} AU (${heliocentricDistance.km})`;
+    } else if (geocentricDistance) {
+      return `${name}\nDistance from Earth: ${geocentricDistance.earthRadii} Earth radii (${geocentricDistance.km})`;
+    }
+    return name;
+  };
+
   return (
-    <mesh ref={meshRef} position={position}>
-      <sphereGeometry args={[size, 32, 32]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
+    <group>
+      <mesh
+        ref={meshRef}
+        position={position}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      >
+        <sphereGeometry args={[size, 32, 32]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+      {hovered && (
+        <Html position={[position[0], position[1] + size + 1, position[2]]}>
+          <div style={{
+            background: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '8px',
+            borderRadius: '4px',
+            whiteSpace: 'pre-line',
+            fontSize: '14px',
+            pointerEvents: 'none'
+          }}>
+            {getHoverInfo()}
+          </div>
+        </Html>
+      )}
+    </group>
   );
 };
 
@@ -102,37 +154,61 @@ const SolarSystem: React.FC = () => {
         <pointLight position={[10, 10, 10]} intensity={1} />
         <Stars radius={150} depth={50} count={5000} factor={4} saturation={0} fade />
         
+        {/* Orbit Rings */}
+        <OrbitRing radius={3.9} color="#A0522D" isVisible={true} />
+        <OrbitRing radius={7.2} color="#DEB887" isVisible={true} />
+        <OrbitRing radius={10} color="#4169E1" isVisible={true} />
+        <OrbitRing radius={15.2} color="#FF4500" isVisible={true} />
+        <OrbitRing radius={52} color="#DEB887" isVisible={true} />
+        <OrbitRing radius={95.8} color="#FFE4B5" isVisible={true} />
+        {isHeliocentric && (
+          <>
+            <OrbitRing radius={192} color="#87CEEB" isVisible={true} />
+            <OrbitRing radius={300.5} color="#1E90FF" isVisible={true} />
+            <OrbitRing radius={394.8} color="#8B4513" isVisible={true} />
+          </>
+        )}
+
         {/* Sun */}
         <Planet
           position={[0, 0, 0]}
           size={2.5}
           color="#FFD700"
-          orbitRadius={10}
+          orbitRadius={isHeliocentric ? 0 : 120}
           orbitSpeed={0.02}
           isHeliocentric={isHeliocentric}
+          name="Sun"
+          heliocentricDistance={{ au: 0, km: "0 km" }}
+          geocentricDistance={{ earthRadii: 1200, km: "~7,645,200 km" }}
         />
 
         {/* Mercury */}
         {(isHeliocentric || !isHeliocentric) && (
           <Planet
-            position={[4.5, 0, 0]}
+            position={[3.9, 0, 0]}
             size={0.4}
             color="#A0522D"
-            orbitRadius={4.5}
+            orbitRadius={3.9}
             orbitSpeed={0.047}
             isHeliocentric={isHeliocentric}
+            name="Mercury"
+            heliocentricDistance={{ au: 0.39, km: "~57.9 million km" }}
+            geocentricDistance={{ earthRadii: 79, km: "~503,000 km" }}
           />
         )}
 
         {/* Venus */}
         {(isHeliocentric || !isHeliocentric) && (
           <Planet
-            position={[7, 0, 0]}
+            position={[7.2, 0, 0]}
             size={0.9}
             color="#DEB887"
-            orbitRadius={7}
+            orbitRadius={7.2}
             orbitSpeed={0.035}
             isHeliocentric={isHeliocentric}
+            name="Venus"
+            heliocentricDistance={{ au: 0.72, km: "~108.2 million km" }}
+            geocentricDistance={{ earthRadii: 120, km: "~764,500 km" }}
           />
         )}
 
@@ -144,77 +220,95 @@ const SolarSystem: React.FC = () => {
           orbitRadius={10}
           orbitSpeed={0.029}
           isHeliocentric={isHeliocentric}
+          name="Earth"
+          heliocentricDistance={{ au: 1.00, km: "~149.6 million km" }}
+          geocentricDistance={{ earthRadii: 0, km: "0 km" }}
         />
 
         {/* Mars */}
         {(isHeliocentric || !isHeliocentric) && (
           <Planet
-            position={[13, 0, 0]}
+            position={[15.2, 0, 0]}
             size={0.5}
             color="#FF4500"
-            orbitRadius={13}
+            orbitRadius={15.2}
             orbitSpeed={0.024}
             isHeliocentric={isHeliocentric}
+            name="Mars"
+            heliocentricDistance={{ au: 1.52, km: "~227.9 million km" }}
+            geocentricDistance={{ earthRadii: 1800, km: "~11,468,000 km" }}
           />
         )}
 
         {/* Jupiter */}
         {(isHeliocentric || !isHeliocentric) && (
           <Planet
-            position={[17, 0, 0]}
+            position={[52, 0, 0]}
             size={2}
             color="#DEB887"
-            orbitRadius={17}
+            orbitRadius={52}
             orbitSpeed={0.013}
             isHeliocentric={isHeliocentric}
+            name="Jupiter"
+            heliocentricDistance={{ au: 5.20, km: "~778.6 million km" }}
+            geocentricDistance={{ earthRadii: 2400, km: "~15,290,000 km" }}
           />
         )}
 
         {/* Saturn */}
         {(isHeliocentric || !isHeliocentric) && (
           <Planet
-            position={[21, 0, 0]}
+            position={[95.8, 0, 0]}
             size={1.8}
             color="#FFE4B5"
-            orbitRadius={21}
+            orbitRadius={95.8}
             orbitSpeed={0.009}
             isHeliocentric={isHeliocentric}
+            name="Saturn"
+            heliocentricDistance={{ au: 9.58, km: "~1.433 billion km" }}
+            geocentricDistance={{ earthRadii: 3600, km: "~22,935,600 km" }}
           />
         )}
 
         {/* Uranus - Only in Heliocentric */}
         {isHeliocentric && (
           <Planet
-            position={[25, 0, 0]}
+            position={[192, 0, 0]}
             size={1.4}
             color="#87CEEB"
-            orbitRadius={25}
+            orbitRadius={192}
             orbitSpeed={0.006}
             isHeliocentric={isHeliocentric}
+            name="Uranus"
+            heliocentricDistance={{ au: 19.20, km: "~2.872 billion km" }}
           />
         )}
 
         {/* Neptune - Only in Heliocentric */}
         {isHeliocentric && (
           <Planet
-            position={[28, 0, 0]}
+            position={[300.5, 0, 0]}
             size={1.3}
             color="#1E90FF"
-            orbitRadius={28}
+            orbitRadius={300.5}
             orbitSpeed={0.005}
             isHeliocentric={isHeliocentric}
+            name="Neptune"
+            heliocentricDistance={{ au: 30.05, km: "~4.495 billion km" }}
           />
         )}
 
         {/* Pluto - Only in Heliocentric */}
         {isHeliocentric && (
           <Planet
-            position={[31, 0, 0]}
+            position={[394.8, 0, 0]}
             size={0.3}
             color="#8B4513"
-            orbitRadius={31}
+            orbitRadius={394.8}
             orbitSpeed={0.004}
             isHeliocentric={isHeliocentric}
+            name="Pluto"
+            heliocentricDistance={{ au: 39.48, km: "~5.906 billion km" }}
           />
         )}
 
