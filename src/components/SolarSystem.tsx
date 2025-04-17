@@ -1061,7 +1061,7 @@ const SolarSystem: React.FC = () => {
             onSelect={setSelectedObjectInfo}
             size={0.5}
             color="#FF4500"
-            orbitRadius={15.2}
+            orbitRadius={40.2}
             orbitSpeed={0.024}
             isHeliocentric={isHeliocentric}
             name="Mars"
